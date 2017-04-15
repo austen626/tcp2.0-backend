@@ -113,6 +113,17 @@ DATABASES = {
     'OPTIONS': {},
   }
 }
+# DATABASES = {
+#   'default': {
+#     'ENGINE': 'django.db.backends.mysql',
+#     'NAME': 'tcp2_145_dev_db',
+#     'USER': 'tcp2-145-dev-db-user',
+#     'PASSWORD': 'p8TzbvQ2ctmbVnD3',
+#     'HOST': '35.230.166.190',
+#     'PORT': '3306',
+#     'OPTIONS': {},
+#   }
+# }
 
 
 # Password validation
@@ -172,4 +183,5 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'developer@dcg.dev' #newaccounts@traviscapitalpartners.com'
 EMAIL_HOST_PASSWORD = 'Password#105'#'TCPnewDCG2020'#
 EMAIL_USE_SSL = False
-INVITE_TOKEN_URL = "https://dev-app.traviscapitalpartners.com/register/?invite_token="
+INVITE_TOKEN_URL = 'http://127.0.0.1:8000/register/?invite_token='#"https://dev-app.traviscapitalpartners.com/register/?invite_token="
+INVITE_TOKEN_URL_ADMIN = 'http://127.0.0.1:8000/register_dealer/?invite_token='

@@ -45,6 +45,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     updated_at = models.DateTimeField(auto_now=True)
     first_name = models.CharField(max_length=101, null=True)
     last_name = models.CharField(max_length=101, null=True)
+    street = models.CharField(max_length=101, null=True)
+    city = models.CharField(max_length=101, null=True)
+    state = models.CharField(max_length=101, null=True)
+    zip = models.CharField(max_length=101, null=True)
+    contact_email = models.CharField(max_length=101, null=True)
     objects = UserManager()
 
     USERNAME_FIELD = "email"

@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 from .models import Invites
+from .models import Company
 from authy.api import AuthyApiClient
 from accounts.models import User
 from quickemailverification import Client as QEVClient
@@ -614,6 +615,23 @@ def send_invite_email(email, invite_token, dealer_company, user_role):
         msg.attach_alternative(html_message, 'text/html')
     msg.send()
     return True
+def send_invite_email_dealer(email, invite_token, dealer_company, user_role):
+    if email is None:
+        return False
+    emails = [email]
+    subject = "TCP User Invitation"
+    message = "Dear User,\n\n"
+    message += "You have received an invitation from "+dealer_company+" to create an account with Travis Capital Partners.\nPlease click the link below to set up your account:\n\n"
+    message += settings.INVITE_TOKEN_URL_ADMIN+invite_token+"&role="+user_role+"&email="+email
+    message += "\n\nThanks!\nTravis Capital Partners"
+
+    from_email = settings.DEFAULT_EMAIL_FROM
+    html_message = ""
+    msg = EmailMultiAlternatives(subject, message, from_email, emails)
+    if html_message:
+        msg.attach_alternative(html_message, 'text/html')
+    msg.send()
+    return True
 
 
 @api_view(['POST'])
@@ -672,5 +690,184 @@ def UserInviteRegisterView(request):
         return Response({'ok': True, 'data': {'authy_id': authy_user.id, 'ending': phone[-4:]}})
     else:
         return Response({'ok': False, 'error': 'Invite Token Expired or Invalid Invite Token '}, HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def AddDealer(request):
+    user = request.user
+    response = {}
+    if user.is_admin:
+        dealer_email = request.data.get('dealer_email')
+        dealer_company_name = request.data.get('dealer_company_name')
+        dealer_contact_email = request.data.get('dealer_contact_email')
+        dealer_phone = request.data.get('dealer_phone')
+        dealer_address_street = request.data.get('dealer_address_street')
+        dealer_address_city = request.data.get('dealer_address_city')
+        dealer_address_state = request.data.get('dealer_address_state')
+        dealer_address_zipcode = request.data.get('dealer_address_zipcode')
+
+        if dealer_email is None or dealer_phone is None:
+            return Response({
+                'ok': False,
+                'error': 'Invalid Request'
+            }, HTTP_400_BAD_REQUEST)
+        elif dealer_email.isnumeric() or '@' not in dealer_email or '.' not in dealer_email:
+            return Response({
+                'ok': False,
+                'error': 'Invalid Email id'
+            }, HTTP_400_BAD_REQUEST)
+        old_user = User.objects.filter(email=dealer_email).first()
+        if old_user is not None:
+            return Response({
+                'ok': False,
+                'error': 'User {} is already exist'.format(dealer_email)
+            }, HTTP_400_BAD_REQUEST)
+        old_user = User.objects.filter(phone=dealer_phone).first()
+        if old_user is not None:
+            return Response({
+                'ok': False,
+                'error': 'User {} is already exist'.format(dealer_phone)
+            }, HTTP_400_BAD_REQUEST)
+        authy_user = authy_api.users.create(email=dealer_email, country_code=1, phone=dealer_phone)
+        if not authy_user.ok():
+            return Response({
+                'ok': False,
+                'error': 'Error while creating user'
+            }, HTTP_400_BAD_REQUEST)
+
+        try:
+            qev = qev_api.quickemailverification()
+            qev_response = qev.verify(dealer_email)
+            if qev_response.code == 200:
+                qev_json = qev_response.body
+                if qev_json.get('result', '') == 'valid' and qev_json.get('disposable', '') == 'false':
+                    response['ok'] = True
+        except Exception as e:
+            pass
+
+        user = User.objects.create_user(dealer_email, authy_user.id, phone=dealer_phone )
+        #user.dealer_company.name = dealer_company_name
+        user.contact_email = dealer_contact_email
+        user.street = dealer_address_street
+        user.city = dealer_address_city
+        user.state = dealer_address_state
+        user.zip = dealer_address_zipcode
+        user.dealer = True
+        user.save()
+        company = Company(name = dealer_company_name)
+        company.save()
+        user.dealer_company_id = company.id
+        user.save()
+
+        # sms = authy_api.users.request_sms(authy_user.id, {
+        #     'force': True
+        # })
+        invite_token = secrets.token_hex(32)
+        invited_user = Invites(email=dealer_email,
+                               user_role='dealer',
+                               invite_token=invite_token,
+                               token_status=True,
+                               generated_by=request.user.email,
+                               dealer_company=company)
+        invited_user.save()
+        # Send Email Invite
+        send_invite_email_dealer(dealer_email, invite_token, dealer_company_name, 'dealer')
+        response['message'] = "Invite email has been sent"
+        return Response(response)
+
+    else:
+        return Response({'ok':False})
+
+@api_view(['POST'])
+def RegisterDealerVerify(request):
+    email = request.data.get('email')
+    password = request.data.get('password')
+    phone = request.data.get('phone')
+    invite_token = request.data.get('invite_token')
+    if email is None or password is None or phone is None:
+        return Response({
+            'ok': False,
+            'error': 'Invalid Request'
+        }, HTTP_400_BAD_REQUEST)
+    invite = Invites.objects.get(email= email, invite_token = invite_token, token_status = True)
+    if invite is not None:
+        user = User.objects.get(email=email)
+        user.set_password(password)
+        user.active = True
+        user.save()
+        invite.token_status = False
+        invite.save()
+        return Response({'ok':True,'message':'User Activated Successfully.'})
+    else:
+        return Response({'ok': False, 'message': 'User Activation Failed.'})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def DealerList(request):
+    user = request.user
+    dealers_data_response = []
+    if user.is_admin:
+        dealers_data = User.objects.filter(dealer= True).order_by('-id')
+        for dealer in dealers_data:
+            data = {}
+            data['company_name'] = dealer.dealer_company.name
+            data['email'] = dealer.email
+            data['contact_email'] = dealer.contact_email
+            data['phone'] = dealer.phone
+            data['is_sales'] = dealer.is_sales
+            data['is_active'] = dealer.is_active
+            data['street'] = dealer.street
+            data['city'] = dealer.city
+            data['state'] = dealer.state
+            data['zip'] = dealer.zip
+            dealers_data_response.append(data)
+        return Response({'ok':True,'data':dealers_data_response})
+    else:
+        return Response({'ok':False,'data':''})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def UpdateDealer(request):
+    user = request.user
+    if user.is_admin:
+        company_name = request.data.get('company_name')
+        email = request.data.get('email')
+        contact_email = request.data.get('contact_email')
+        phone = request.data.get('phone')
+        street = request.data.get('street')
+        city = request.data.get('city')
+        state = request.data.get('state')
+        zip = request.data.get('zip')
+        updated_email = request.data.get('updated_email')
+        updated_phone = request.data.get('updated_phone')
+        db_user = User.objects.get(email = updated_email)
+        if db_user is None or email == updated_email:
+            dealer_user = User.objects.get(email = email,phone = phone)
+            dealer_company_id = dealer_user.dealer_company_id
+            company = Company.objects.get(id = dealer_company_id)
+            company.name = company_name
+            company.save()
+            dealer_user.email = updated_email
+            dealer_user.contact_email = contact_email
+            dealer_user.phone = updated_phone
+            dealer_user.street = street
+            dealer_user.city = city
+            dealer_user.state = state
+            dealer_user.zip = zip
+            dealer_user.save()
+            return Response({'ok':True,'message':'User Updated Successfully.'})
+        else:
+            return Response({'ok': False, 'message': ''})
+
+
+
+
+
+
+
+
+
+
 
 
