@@ -8,6 +8,8 @@ WORKDIR /usr/src/app
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+RUN ls -al /usr/local/
+
 RUN apt-get update && apt-get install -y net-tools wget unzip && \
     bash && \
   # ENABLE GCLOUD SDK IF NEEDED
