@@ -24,6 +24,7 @@ COPY ./requirements.txt .
 RUN pip install -r requirements.txt
 # copy project
 COPY . /usr/src/app/
+COPY cloud-run-entrypoint.sh /usr/local/bin
 
 ENTRYPOINT ["cloud-run-entrypoint.sh"]
 
