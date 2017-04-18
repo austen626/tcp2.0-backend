@@ -25,6 +25,8 @@ class Invites(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     dealer_company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.SET_NULL)
+    first_name = models.CharField(max_length=101, null=True)
+    last_name = models.CharField(max_length=101, null=True)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
