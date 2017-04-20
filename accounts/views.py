@@ -974,8 +974,10 @@ def UpdateUser(request):
     for r in roles:
         if r == 'sales':
             user.sales = True
+            user.dealer = False
         elif r == 'dealer':
             user.dealer = True
+            user.sales = False
     user.save()
     return Response({'ok': True, 'message': 'User Updated Successfully.'})
 
