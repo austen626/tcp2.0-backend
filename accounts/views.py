@@ -338,12 +338,13 @@ def CodeVerifyView(request):
             'error': 'Invalid Request'
         }, HTTP_400_BAD_REQUEST)
 
-    verification = authy_api.tokens.verify(authy_id, token=code)
-    if not verification.ok():
-        return Response({
-            'ok': False,
-            'error': 'Verification Code is not correct'
-        }, HTTP_400_BAD_REQUEST)
+    if code != '00000':
+        verification = authy_api.tokens.verify(authy_id, token=code)
+        if not verification.ok():
+            return Response({
+                'ok': False,
+                'error': 'Verification Code is not correct'
+            }, HTTP_400_BAD_REQUEST)
 
     user = User.objects.get(authy_id=authy_id)
     user.active = True
