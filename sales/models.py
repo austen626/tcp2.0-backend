@@ -6,6 +6,8 @@ from jsonfield import JSONField
 
 class Customer(models.Model):
     name = models.CharField(max_length=101)
+    first_name = models.CharField(max_length=101, null=True, blank=True)
+    last_name = models.CharField(max_length=101, null=True, blank=True)
     email = models.CharField(max_length=51, null=True, blank=True)
     dobY = models.CharField(max_length=11, null=True, blank=True)
     dobM = models.CharField(max_length=11, null=True, blank=True)
@@ -51,7 +53,19 @@ class Application(models.Model):
     message = models.CharField(max_length=300, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+class CreditApplication(models.Model):
+    credit_app = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='maincreditapp')
+    credit_co_app = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='cocreditapp', blank=True, null=True)
+    co_enabled = models.BooleanField(default=False)
+    co_complete = models.BooleanField(default=False)
+    co_separate = models.BooleanField(default=False)
+    status = models.CharField(max_length=101, null=True, blank=True)
+    created_at = models.DateField(null=True, blank=True)
+    salesperson_email = models.CharField(max_length=51, default='developer@dcg.dev')
+    rating = models.IntegerField(default=0)
+    message = models.CharField(max_length=300, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 class Product(models.Model):
     app = models.ForeignKey(Application, on_delete=models.CASCADE, null=True, blank=True)
