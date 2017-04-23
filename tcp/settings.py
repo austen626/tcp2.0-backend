@@ -185,3 +185,4 @@ EMAIL_HOST_PASSWORD = 'Password#105'#'TCPnewDCG2020'#
 EMAIL_USE_SSL = False
 INVITE_TOKEN_URL = 'https://tcp2-dev-web-5scjsehyma-uk.a.run.app/register/?invite_token='#"https://dev-app.traviscapitalpartners.com/register/?invite_token="
 INVITE_TOKEN_URL_ADMIN = 'http://127.0.0.1:8000/register_dealer/?invite_token='
+INVITE_CREDIT_APP_URL = 'https://tcp2-dev-web-5scjsehyma-uk.a.run.app/credit_apps/?doc_id='
