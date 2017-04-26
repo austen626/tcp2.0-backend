@@ -337,6 +337,11 @@ def CodeVerifyView(request):
             'ok': False,
             'error': 'Invalid Request'
         }, HTTP_400_BAD_REQUEST)
+    if code.isnumeric()== False:
+        return Response({
+            'ok': False,
+            'error': 'Invalid Code.'
+        }, HTTP_400_BAD_REQUEST)
 
     if code != '000000':
         verification = authy_api.tokens.verify(authy_id, token=code)
@@ -425,6 +430,7 @@ def UserView(request):
     user = request.user
     users = User.objects.filter(dealer_company=user.dealer_company).exclude(account_status=False)
     result = []
+    name_list = []
     for user in users:
         role = []
         if user.is_sales:
@@ -433,6 +439,7 @@ def UserView(request):
             role.append('dealer')
         if user.is_admin:
             role.append('admin')
+        name_list.append(user.first_name)
         result.append({
             "id": user.id,
             "email": user.email,
@@ -450,8 +457,17 @@ def UserView(request):
             "state":user.state,
             "zip":user.zip
         })
+    #sorting
+    name_list.sort()
+    print('name_list===', name_list)
+    data_res = []
+    for nl in name_list:
+        for r in result:
+            if nl== r['first_name']:
+                data_res.append(r)
+                result.remove(r)
 
-    return Response(result)
+    return Response(data_res)
 
 
 @api_view(['PUT'])
@@ -832,6 +848,7 @@ def RegisterDealerVerify(request):
 def DealerList(request):
     user = request.user
     dealers_data_response = []
+    comp_list = []
     if user.is_admin:
         dealers_data = User.objects.filter(dealer= True, account_status= True).order_by('-id')#, active = True
         for dealer in dealers_data:
@@ -845,6 +862,7 @@ def DealerList(request):
             data = {}
             data['id'] = dealer.id
             data['company_name'] = dealer.dealer_company.name
+            comp_list.append(dealer.dealer_company.name)
             data['email'] = dealer.email
             data['contact_email'] = dealer.contact_email
             data['phone'] = dealer.phone
@@ -856,7 +874,16 @@ def DealerList(request):
             data['zip'] = dealer.zip
             data['role'] = role
             dealers_data_response.append(data)
-        return Response({'ok':True,'data':dealers_data_response})
+        #sorting
+        comp_list.sort()
+        sorted_dealer_data = []
+        for comp in comp_list:
+            for dl in dealers_data_response:
+                if comp == dl['company_name']:
+                    sorted_dealer_data.append(dl)
+                    dealers_data_response.remove(dl)
+
+        return Response({'ok':True,'data':sorted_dealer_data})
     else:
         return Response({'ok':False,'data':''})
 
