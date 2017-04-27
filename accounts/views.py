@@ -458,12 +458,14 @@ def UserView(request):
             "zip":user.zip
         })
     #sorting
+    print('name_list===', name_list)
+    name_list = [name.capitalize() for name in name_list ]
     name_list.sort()
     print('name_list===', name_list)
     data_res = []
     for nl in name_list:
         for r in result:
-            if nl== r['first_name']:
+            if nl== r['first_name'].capitalize():
                 data_res.append(r)
                 result.remove(r)
 
