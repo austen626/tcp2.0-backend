@@ -1066,7 +1066,7 @@ def SearchCustomer(request):
             result['co_app'] = model_to_dict(co_customer, fields=[field.name for field in co_customer._meta.fields])
         else:
             result['co_enabled'] = False
-        return Response({'ok':True,'data':result})
+        return Response({'status':'success','message':'','ok':True,'data':result})
     result = []
     try:
         r = searchContactsByPhoneEmail(data['phone'], data['email'])  # searchContacts(data["name"], data["city"])
@@ -1076,7 +1076,7 @@ def SearchCustomer(request):
             result.append(data)
     except Exception as e:
         print(e, "No Data found")
-        return Response({'ok':True,'data':[], 'msg':'No Data found'})
+        return Response({'status':'error','message':'No Data found','ok':True,'data':[], 'msg':'No Data found'})
     for r in result:
         cif_no = r['cif_no']
         try:
@@ -1106,7 +1106,7 @@ def SearchCustomer(request):
             return Response(result)
         except Exception as e:
             print(e)
-            return Response("Customer Not Found", HTTP_400_BAD_REQUEST)
+            return Response({'status':'success','message':'Çustomer Not Found'}, HTTP_400_BAD_REQUEST)
 
 
 
@@ -2852,8 +2852,10 @@ def AppCredict(request):
 
     if action is None:
         return Response({
+            'status': 'error',
+            'message': 'Action attribute is missing.',
             'ok': False,
-            'error': 'Action attribute is mising.'
+            'error': 'Action attribute is missing.'
         }, HTTP_400_BAD_REQUEST)
 
     if action == 'ondevice':
@@ -2861,8 +2863,9 @@ def AppCredict(request):
         #all_field_data = model_to_dict(customer, fields=[field.name for field in customer._meta.fields])
 
         return Response({
+                            'status': 'success',
                             'ok': True,
-                            'message': 'Customer has been saved.',
+                            'message': 'Customer’s details have been saved.',
                             'data':request.data
                         })
     elif action == 'onlink':
@@ -2881,6 +2884,7 @@ def AppCredict(request):
         customer.save()
         result = send_link_email(customer_email, customer.id , customer_phone, company.name)
         return Response({
+            'status': 'success',
             'ok': result,
             'message': 'Mail has been sent.'
         })
@@ -2900,6 +2904,7 @@ def AppCredict(request):
         customer.save()
 
         return Response({
+            'status': 'success',
             'ok': True,
             'message': 'Data saved.'
         })
@@ -2907,6 +2912,7 @@ def AppCredict(request):
 
     else:
         return Response({
+            'status': 'error',
             'ok': False,
             'message': 'action attribute is not correct.'
         })
@@ -3014,6 +3020,8 @@ def AppCredictDetails(request):
 
 
         return Response({
+            'status': 'success',
+            'message': 'Application Updated Successfully ',
             'ok': True
         })
     elif existing_id == 0:
@@ -3104,9 +3112,13 @@ def AppCredictDetails(request):
         #send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
 
         return Response({
+            'status': 'success',
+            'message': 'Application Submitted Successfully. ',
             'ok': True
         })
     else:
         return Response({
+            'status': 'error',
+            'message': 'Customer Not Found. ',
             'ok':False
         })
