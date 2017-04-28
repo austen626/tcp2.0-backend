@@ -1045,7 +1045,11 @@ def SearchCustomerViewLocal(request):
 @permission_classes([IsAuthenticated])
 def SearchCustomer(request):
     data = request.data
-    customer = Customer.objects.get(email = data['email'], cell_phone = data['phone'])
+    customer = None
+    try:
+        customer = Customer.objects.get(email = data['email'], cell_phone = data['phone'])
+    except:
+        pass
     if customer is not None:
         #converting db row to dict
         all_field_data = model_to_dict(customer, fields=[field.name for field in customer._meta.fields])
