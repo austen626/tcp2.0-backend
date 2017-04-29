@@ -1047,7 +1047,10 @@ def SearchCustomer(request):
     data = request.data
     customer = None
     try:
-        customer = Customer.objects.get(email = data['email'], cell_phone = data['phone'])
+        main_customer_set = Customer.objects.filter(email = data['email'], cell_phone = data['phone']).order_by('-id')[:1]
+        # - is desc, [:1] is limit 1
+        customer = [m for m in main_customer_set][-1]
+        #customer = Customer.objects.get(email = data['email'], cell_phone = data['phone'])
     except:
         pass
     if customer is not None:
@@ -2964,17 +2967,27 @@ def AppCredictDetails(request):
         company = Company.objects.get(id=user.dealer_company_id)
         print(company.contact_type,company.contact_code)
 
-        main_customer.cif_number = '15818'#createContact(main_customer)
+        main_customer.cif_number = createContact(main_customer)
         main_customer.save()
-        credit_application = CreditApplication.objects.get(credit_app_id = main_customer.id)#(credit_app = main_customer)
-        credit_application.salesperson_email = request.user.email
-        #credit_application.save()
+        credit_application = None
+        try:
+            credit_application = CreditApplication.objects.get(credit_app_id = main_customer.id)#(credit_app = main_customer)
+            credit_application.salesperson_email = request.user.email
+            #credit_application.save()
+        except:
+            credit_application = CreditApplication(credit_app=main_customer)
+            credit_application.salesperson_email = request.user.email
 
 
 
         co_enabled = contact["co_enabled"]
         if co_enabled == True:
-            co_customer = Customer.objects.get(id=credit_application.credit_co_app_id)
+            co_customer = None
+            try:
+                co_customer = Customer.objects.get(id=credit_application.credit_co_app_id)
+            except:
+                co_customer = Customer(email = co_app["email"], cell_phone = co_app['cell_phone'])
+                co_customer.save()
             co_customer.name = co_app["name"]
             co_customer.email = co_app["email"]
             co_customer.dobY = co_app["dobY"]
@@ -3005,7 +3018,7 @@ def AppCredictDetails(request):
             co_customer.last_name = co_app['last_name']
             co_customer.save()
 
-            co_customer.cif_number = '15817'#createContact(co_customer)
+            co_customer.cif_number = createContact(co_customer)
             co_customer.save()
 
             credit_application.credit_co_app = co_customer
@@ -3061,7 +3074,7 @@ def AppCredictDetails(request):
         company = Company.objects.get(id=user.dealer_company_id)
         print(company.contact_type, company.contact_code)
 
-        main_customer.cif_number = '1112'#createContact(main_customer)
+        main_customer.cif_number = createContact(main_customer)
         main_customer.save()
         credit_application = CreditApplication(credit_app=main_customer)
         credit_application.salesperson_email = request.user.email
@@ -3099,7 +3112,7 @@ def AppCredictDetails(request):
                 last_name=co_app['last_name']
             )
             co_customer.save()
-            co_customer.cif_number = '11111'#createContact(co_customer)
+            co_customer.cif_number = createContact(co_customer)
             co_customer.save()
 
             credit_application.credit_co_app = co_customer
