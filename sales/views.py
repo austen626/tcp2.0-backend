@@ -2969,7 +2969,7 @@ def AppCredictDetails(request):
         credit_application = CreditApplication.objects.get(credit_app_id = main_customer.id)#(credit_app = main_customer)
         credit_application.salesperson_email = request.user.email
         #credit_application.save()
-        print(credit_application.credit_co_app_id,'-----------00---')
+
 
 
         co_enabled = contact["co_enabled"]
@@ -3014,8 +3014,8 @@ def AppCredictDetails(request):
         credit_application.status = "completed"
         credit_application.created_at = datetime.date.today()
         credit_application.save()
-        #send_invite_email(main_customer.email, existing_id, company.name)
-        #send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
+        send_invite_email(main_customer.email, existing_id, company.name)
+        send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
 
 
 
@@ -3108,8 +3108,8 @@ def AppCredictDetails(request):
         credit_application.status = "completed"
         credit_application.created_at = datetime.date.today()
         credit_application.save()
-        #send_invite_email(main_customer.email, existing_id, company.name)
-        #send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
+        send_invite_email(main_customer.email, existing_id, company.name)
+        send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
 
         return Response({
             'status': 'success',

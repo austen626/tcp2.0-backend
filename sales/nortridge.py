@@ -11,12 +11,13 @@ def getToken():
     url = 'https://auth.nortridgehosting.com/10.0.1/core/connect/token'
     data = {
         "username": "DCGTest8370",
-        "password": "!17nLs468",
+        "password": "!78NLs1213",
         "client_id": "08370T",
         "client_secret": "x8LrG!Za^",
         "scope": "openid api server:rnn1-nls-sqlt01.nls.nortridge.tech db:Travis_Capital_Test",
         "grant_type": "password"
     }
+    #!17nLs468
 
 
 
