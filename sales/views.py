@@ -1133,6 +1133,44 @@ def SearchCustomer(request):
         traceback.print_exc()
         return Response({'status':'error','message':'Çustomer Not Found'}, HTTP_400_BAD_REQUEST)
 
+@api_view(['POST'])
+def SearchCustomerByID(request):
+    data = request.data
+    customer_id = data['id']
+    token = data['token']
+    try:
+        customer = Customer.objects.get(id=customer_id)
+        digest = customer.email + str(customer_id)
+        digest_token = hashlib.sha512(digest.encode())
+        digest_token = digest_token.hexdigest()
+        #print(digest_token, '==', token)
+        if digest_token != token:
+            return Response({
+                'status': 'error',
+                'message': 'Authentication failure',
+                'ok': False
+            })
+
+        all_field_data = model_to_dict(customer, fields=[field.name for field in customer._meta.fields])
+        credit_application = None
+        try:
+            credit_application = CreditApplication.objects.get(credit_app_id=customer.id)
+        except Exception as e:
+            print(e)
+            pass
+        result = {}
+        result['main_app'] = all_field_data
+        if credit_application is not None:
+            co_customer = Customer.objects.get(id=credit_application.credit_co_app_id)
+            result['co_enabled'] = True
+            result['co_app'] = model_to_dict(co_customer, fields=[field.name for field in co_customer._meta.fields])
+        else:
+            result['co_enabled'] = False
+            result['co_app'] = {}
+        return Response({'status': 'success', 'message': '', 'ok': True, 'data': result})
+    except:
+        return Response({'status': 'error', 'message': 'Çustomer Not Found'}, HTTP_400_BAD_REQUEST)
+
 
 
 @api_view(['POST'])

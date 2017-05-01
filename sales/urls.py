@@ -9,6 +9,7 @@ urlpatterns = [
     path('apps-nohello', Appsnohello),
 
     path('search-customer', SearchCustomer),
+    path('search-customer-id', SearchCustomerByID),
     path('creditapp', AppCredict),
     path('creditapp-details', AppCredictDetails),
     path('creditapp-details-onlink', AppCredictDetailsonLink),
