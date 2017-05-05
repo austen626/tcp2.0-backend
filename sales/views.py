@@ -54,13 +54,16 @@ def check_public_holiday(selected_date):
         print("Final Selected Date is", final_date)
         return final_date
 #send Emails
-def send_invite_email(email, invite_id, dealer_company):
+def send_invite_email(email, user_type, dealer_company, user_name = 'User'):
     if email is None:
         return False
     emails = [email]
     subject = "TCP Credit application"
-    message = "Dear User,\n\n"
-    message += "Credit application is completed on"+ dealer_company+"\n\n"
+    message = "Dear "+user_type+",\n\n"
+    if user_type =='User':
+        message += "Your credit application for the "+ dealer_company+" has been submitted successfully.\n\n"
+    elif user_type== 'Admin':
+        message += "The credit application of "+user_name+" has been submitted successfully for the "+dealer_company+"."+"\n\n"
     message += "\n\nThanks!\nTravis Capital Partners"
 
     from_email = settings.DEFAULT_EMAIL_FROM
@@ -78,7 +81,7 @@ def send_link_email(email, doc_id, phone, dealer_company, digest, sales_email):
     emails = [email]
     subject = "TCP Credit application"
     message = "Dear User,\n\n"
-    message += "Credit application is on"+ dealer_company+"\n\n  Please fill details in the link-"
+    message += "Credit application is on "+ dealer_company+"\n\n  Please fill details in the link-"
     message += settings.INVITE_CREDIT_APP_URL + str(doc_id) + "&phone=" + phone + "&email=" + email+ "&salesperson_email=" + sales_email+ "&token=" + token
     message += "\n\nThanks!\nTravis Capital Partners"
 
@@ -3090,8 +3093,12 @@ def AppCredictDetails(request):
         credit_application.status = "completed"
         credit_application.created_at = datetime.date.today()
         credit_application.save()
-        send_invite_email(main_customer.email, existing_id, company.name)
-        send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
+        send_invite_email(main_customer.email,'User', company.name, main_customer.name)
+        both_user = main_customer.name
+        if co_enabled == True:
+            send_invite_email(co_customer.email, 'User', company.name, co_customer.name)
+            both_user = both_user + '&' + co_customer.name
+        send_invite_email(settings.EMAIL_HOST_USER, 'Admin', company.name, both_user)
 
 
 
@@ -3183,8 +3190,13 @@ def AppCredictDetails(request):
         credit_application.status = "completed"
         credit_application.created_at = datetime.date.today()
         credit_application.save()
-        send_invite_email(main_customer.email, existing_id, company.name)
-        send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
+
+        send_invite_email(main_customer.email,'User', company.name, main_customer.name)
+        both_user = main_customer.name
+        if co_enabled == True:
+            send_invite_email(co_customer.email, 'User', company.name, co_customer.name)
+            both_user = both_user + '&' + co_customer.name
+        send_invite_email(settings.EMAIL_HOST_USER, 'Admin', company.name, both_user)
 
         return Response({
             'status': 'success',
@@ -3319,8 +3331,14 @@ def AppCredictDetailsonLink(request):
         credit_application.status = "completed"
         credit_application.created_at = datetime.date.today()
         credit_application.save()
-        send_invite_email(main_customer.email, existing_id, company.name)
-        send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
+
+        send_invite_email(main_customer.email,'User', company.name, main_customer.name)
+        both_user = main_customer.name
+        if co_enabled == True:
+            send_invite_email(co_customer.email, 'User', company.name, co_customer.name)
+            both_user = both_user + '&' + co_customer.name
+        send_invite_email(settings.EMAIL_HOST_USER, 'Admin', company.name, both_user)
+
 
 
 
