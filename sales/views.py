@@ -2938,28 +2938,52 @@ def AppCredict(request):
                             'data':request.data
                         })
     elif action == 'onlink':
-        customer = Customer.objects.filter(email=customer_email, cell_phone=customer_phone).first()
-        if customer is None:
+        cid = request.data.get('customer_id')
+        #customer = Customer.objects.filter(email=customer_email, cell_phone=customer_phone).first()
+        if cid is None or cid==0:
             customer = Customer(email=customer_email, cell_phone=customer_phone)
             customer.save()
-        customer.first_name = first_name
-        customer.last_name = last_name
-        customer.name = name
-        customer.cell_phone = customer_phone
-        customer.street = street
-        customer.city = city
-        customer.state = state
-        customer.zip = zip_code
-        customer.save()
-        credit_application = CreditApplication(credit_app=customer)
-        credit_application.status = 'link_sent'
-        credit_application.save()
-        result = send_link_email(customer_email, customer.id , customer_phone, company.name,customer_email+str(customer.id), user.email)
-        return Response({
-            'status': 'success',
-            'ok': result,
-            'message': 'Mail has been sent.'
-        })
+            customer.first_name = first_name
+            customer.last_name = last_name
+            customer.name = name
+            customer.cell_phone = customer_phone
+            customer.street = street
+            customer.city = city
+            customer.state = state
+            customer.zip = zip_code
+            customer.save()
+            credit_application = CreditApplication(credit_app=customer)
+            credit_application.salesperson_email = request.user.email
+            credit_application.status = 'link_sent'
+            credit_application.save()
+            result = send_link_email(customer_email, customer.id , customer_phone, company.name,customer_email+str(customer.id), user.email)
+            return Response({
+                'status': 'success',
+                'ok': result,
+                'message': 'Mail has been sent.'
+            })
+        else:
+            customer = Customer.objects.get(id = cid)
+            customer.first_name = first_name
+            customer.last_name = last_name
+            customer.name = name
+            customer.cell_phone = customer_phone
+            customer.street = street
+            customer.city = city
+            customer.state = state
+            customer.zip = zip_code
+            customer.save()
+            credit_application = CreditApplication.objects.get(credit_app=cid)
+            credit_application.status = 'link_sent'
+            credit_application.salesperson_email = request.user.email
+            credit_application.save()
+            result = send_link_email(customer_email, customer.id, customer_phone, company.name,
+                                     customer_email + str(customer.id), user.email)
+            return Response({
+                'status': 'success',
+                'ok': result,
+                'message': 'Mail has been sent.'
+            })
     elif action == 'save&exit':
         customer = Customer.objects.filter(email=customer_email, cell_phone=customer_phone).first()
         if customer is None:
