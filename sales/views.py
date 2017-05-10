@@ -80,16 +80,16 @@ def send_link_email(email, doc_id, phone, dealer_company, digest, sales_email):
     token = token.hexdigest()
     emails = [email]
     subject = "TCP Credit application"
-    message = "Dear User,\n\n"
-    message += "Credit application is on "+ dealer_company+"\n\n  Please fill details in the link-"
-    message += settings.INVITE_CREDIT_APP_URL + str(doc_id) + "&phone=" + phone + "&email=" + email+ "&salesperson_email=" + sales_email+ "&token=" + token
-    message += "\n\nThanks!\nTravis Capital Partners"
+    message = "Dear User,<br/><br/>"
+    message += "Credit application is on "+ dealer_company+".<br/><br/>  Please fill details in the link - "
+    message += "<a href='"+settings.INVITE_CREDIT_APP_URL + str(doc_id) + "&phone=" + phone + "&email=" + email+ "&salesperson_email=" + sales_email+ "&token=" + token+"' target='_blank'>click here</a>"
+    message += "<br/><br/>Thanks!<br/>Travis Capital Partners"
 
     from_email = settings.DEFAULT_EMAIL_FROM
     html_message = ""
     msg = EmailMultiAlternatives(subject, message, from_email, emails)
-    if html_message:
-        msg.attach_alternative(html_message, 'text/html')
+    #if html_message:
+    msg.attach_alternative(message, 'text/html')
     msg.send()
     return True
 
@@ -1159,14 +1159,16 @@ def SearchCustomerByID(request):
 
         all_field_data = model_to_dict(customer, fields=[field.name for field in customer._meta.fields])
         credit_application = None
+        credit_co_app_id = None
         try:
             credit_application = CreditApplication.objects.get(credit_app_id=customer.id)
+            credit_co_app_id = credit_application.credit_co_app_id
         except Exception as e:
             print(e)
             pass
         result = {}
         result['main_app'] = all_field_data
-        if credit_application is not None:
+        if credit_application is not None and credit_co_app_id is not None:
             co_customer = Customer.objects.get(id=credit_application.credit_co_app_id)
             result['co_enabled'] = True
             result['co_app'] = model_to_dict(co_customer, fields=[field.name for field in co_customer._meta.fields])
@@ -2907,9 +2909,9 @@ def HellosignReminder(request, pk):
 def AppCredict(request):
     customer_email = request.data.get('customer_email')
     customer_phone = request.data.get('customer_phone')
-    customer_phone = customer_phone.replace(' ','')
-    customer_phone = customer_phone.replace('(', '')
-    customer_phone = customer_phone.replace(')', '-')
+    # customer_phone = customer_phone.replace(' ','')
+    # customer_phone = customer_phone.replace('(', '')
+    # customer_phone = customer_phone.replace(')', '-')
     first_name = request.data.get('first_name')
     last_name = request.data.get('last_name')
     name = request.data.get('name')
