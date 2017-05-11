@@ -474,6 +474,9 @@ def UserView(request):
         if user.is_admin:
             role.append('admin')
         name_list.append(user.first_name)
+        first_name = 'NA'
+        if user.first_name is not None:
+            first_name = user.first_name
         result.append({
             "id": user.id,
             "email": user.email,
@@ -483,7 +486,7 @@ def UserView(request):
             "role": role,
             "company": user.dealer_company.name,
             "status": user.account_status,
-            "first_name": user.first_name,
+            "first_name": first_name,
             "last_name": user.last_name,
             "contact_email":user.contact_email,
             "street": user.street,
@@ -493,6 +496,7 @@ def UserView(request):
         })
     #sorting
     print('name_list===', name_list)
+    name_list = [name if name is not None else 'NA' for name in name_list ]
     name_list = [name.capitalize() for name in name_list ]
     name_list.sort()
     print('name_list===', name_list)
