@@ -709,8 +709,39 @@ def UserInviteRegisterView(request):
     phone = request.data.get('phone')
     invite_token = request.data.get('invite_token')
     role = request.data.get('role')
-    #first_name = request.data.get('first_name')
-    #last_name = request.data.get('last_name')
+    first_name = request.data.get('first_name')
+    last_name = request.data.get('last_name')
+
+    #for admin_create dealer
+    if role=='dealer':
+        invite = Invites.objects.get(email=email, invite_token=invite_token, token_status=True)
+        if invite is not None:
+            gen_email = invite.generated_by
+            gen_user = User.objects.filter(email=gen_email).first()
+            if gen_user.admin:
+                print('admin')
+                if invite is not None:
+                    user = User.objects.get(email=email)
+                    user.set_password(password)
+                    user.active = True
+                    user.first_name = first_name
+                    user.last_name = last_name
+                    user.save()
+                    invite.token_status = False
+                    invite.save()
+                    sms = authy_api.users.request_sms(user.authy_id, {'force': True})
+                    print(sms)
+                    return Response({
+                        'status': 'success',
+                        'message': 'Code has been sent.',
+                        'ok': True,
+                        'data': {
+                            'authy_id': user.authy_id,
+                            'ending': user.phone[-4:]
+                        }
+                    })
+
+
     if email is None or password is None or phone is None or invite_token is None or role is None :
         return Response({
             'status': 'error',
@@ -838,6 +869,7 @@ def AddDealer(request):
         user.state = dealer_address_state
         user.zip = dealer_address_zipcode
         user.dealer = True
+        user.sales = False
         user.save()
         company = Company(name = dealer_company_name)
         company.save()
