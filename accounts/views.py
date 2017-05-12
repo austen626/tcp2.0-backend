@@ -803,6 +803,7 @@ def AddDealer(request):
     user = request.user
     response = {}
     if user.is_admin:
+        admin_name = user.first_name
         dealer_email = request.data.get('email')
         dealer_company_name = request.data.get('company_name')
         dealer_contact_email = request.data.get('contact_email')
@@ -888,7 +889,7 @@ def AddDealer(request):
                                dealer_company=company)
         invited_user.save()
         # Send Email Invite
-        send_invite_email(dealer_email, invite_token, dealer_company_name, 'dealer')
+        send_invite_email(dealer_email, invite_token, admin_name, 'dealer')
         response['message'] = "Invite email has been sent"
         response['status'] = 'success'
         return Response(response)
