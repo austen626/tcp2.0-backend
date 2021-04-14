@@ -34,4 +34,4 @@ steps:
 # update image name. This is what is pushed in GCR
 
 images:
-- gcr.io/tcp-293717/dev-api
+- gcr.io/tcp-293717/tcp2-dev-api
