@@ -8,13 +8,10 @@ WORKDIR /usr/src/app
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-RUN ls -al /usr/local/
+COPY cloud-run-entrypoint.sh /usr/local/bin
 
-RUN apt-get update && apt-get install -y net-tools wget unzip && \
-    bash && \
-  # ENABLE GCLOUD SDK IF NEEDED
-  # curl -sSL https://sdk.cloud.google.com | bash && \
- 
+RUN apt-get update && apt-get install -y wget && \
+    bash && \ 
   # DOWNLOAD AND INSTALL CLOUD SQL PROXY
   wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O /usr/local/bin/cloud_sql_proxy && \  
   chmod +x /usr/local/bin/cloud_sql_proxy && \
@@ -26,7 +23,6 @@ COPY ./requirements.txt .
 RUN pip install -r requirements.txt
 # copy project
 COPY . /usr/src/app/
-COPY cloud-run-entrypoint.sh /usr/local/bin
 
 ENTRYPOINT ["cloud-run-entrypoint.sh"]
 
