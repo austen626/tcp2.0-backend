@@ -788,6 +788,8 @@ def RegisterDealerVerify(request):
     email = request.data.get('email')
     password = request.data.get('password')
     phone = request.data.get('phone')
+    first_name = request.data.get('first_name')
+    last_name = request.data.get('last_name')
     invite_token = request.data.get('invite_token')
     if email is None or password is None or phone is None:
         return Response({
@@ -799,12 +801,23 @@ def RegisterDealerVerify(request):
         user = User.objects.get(email=email)
         user.set_password(password)
         user.active = True
+        user.first_name = first_name
+        user.last_name = last_name
         user.save()
         invite.token_status = False
         invite.save()
-        return Response({'ok':True,'message':'User Activated Successfully.'})
+        sms = authy_api.users.request_sms(user.authy_id, {'force': True})
+        print(sms)
+        return Response({
+            'ok': True,
+            'data': {
+                'authy_id': user.authy_id,
+                'ending': user.phone[-4:]
+            }
+        })
+
     else:
-        return Response({'ok': False, 'message': 'User Activation Failed.'})
+        return Response({'ok': False})
 
 
 @api_view(['GET'])
