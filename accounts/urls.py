@@ -23,10 +23,11 @@ urlpatterns = [
     path('user-delete/<int:pk>', UserDeleteView),
     path('invite', UserInviteView),
     path('invite-register', UserInviteRegisterView),
+    #create dealer
     path('add-dealer', AddDealer),
     path('register_dealer', RegisterDealerVerify),
     path('list-dealer', DealerList),
-    path('update-dealer', UpdateDealer)
+    path('update-staff', UpdateStaff)
 
 
 ]

@@ -442,7 +442,12 @@ def UserView(request):
             "company": user.dealer_company.name,
             "status": user.account_status,
             "first_name": user.first_name,
-            "last_name": user.last_name
+            "last_name": user.last_name,
+            "contact_email":user.contact_email,
+            "street": user.street,
+            "city":user.city,
+            "state":user.state,
+            "zip":user.zip
         })
 
     return Response(result)
@@ -811,6 +816,7 @@ def DealerList(request):
         dealers_data = User.objects.filter(dealer= True).order_by('-id')
         for dealer in dealers_data:
             data = {}
+            data['id'] = dealer.id
             data['company_name'] = dealer.dealer_company.name
             data['email'] = dealer.email
             data['contact_email'] = dealer.contact_email
@@ -828,37 +834,54 @@ def DealerList(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def UpdateDealer(request):
-    user = request.user
-    if user.is_admin:
-        company_name = request.data.get('company_name')
-        email = request.data.get('email')
-        contact_email = request.data.get('contact_email')
-        phone = request.data.get('phone')
-        street = request.data.get('street')
-        city = request.data.get('city')
-        state = request.data.get('state')
-        zip = request.data.get('zip')
-        updated_email = request.data.get('updated_email')
-        updated_phone = request.data.get('updated_phone')
-        db_user = User.objects.get(email = updated_email)
-        if db_user is None or email == updated_email:
-            dealer_user = User.objects.get(email = email,phone = phone)
-            dealer_company_id = dealer_user.dealer_company_id
-            company = Company.objects.get(id = dealer_company_id)
-            company.name = company_name
-            company.save()
-            dealer_user.email = updated_email
-            dealer_user.contact_email = contact_email
-            dealer_user.phone = updated_phone
-            dealer_user.street = street
-            dealer_user.city = city
-            dealer_user.state = state
-            dealer_user.zip = zip
-            dealer_user.save()
-            return Response({'ok':True,'message':'User Updated Successfully.'})
-        else:
-            return Response({'ok': False, 'message': ''})
+def UpdateStaff(request):
+    db_id = request.data.get('id')
+    company_name = request.data.get('company_name')
+    email = request.data.get('email')
+    contact_email = request.data.get('contact_email')
+    phone = request.data.get('phone')
+    street = request.data.get('street')
+    city = request.data.get('city')
+    state = request.data.get('state')
+    zip = request.data.get('zip')
+    updated_email = request.data.get('updated_email')
+    updated_phone = request.data.get('updated_phone')
+    db_user_email = User.objects.get(email=updated_email)
+    db_user_mob = User.objects.get(phone=updated_phone)
+    if db_user_email is None and db_user_mob is None :
+        dealer_user = User.objects.get(id = db_id)
+        dealer_company_id = dealer_user.dealer_company_id
+        company = Company.objects.get(id=dealer_company_id)
+        company.name = company_name
+        company.save()
+        dealer_user.email = updated_email
+        dealer_user.contact_email = contact_email
+        dealer_user.phone = updated_phone
+        dealer_user.street = street
+        dealer_user.city = city
+        dealer_user.state = state
+        dealer_user.zip = zip
+        dealer_user.save()
+        return Response({'ok': True, 'message': 'User Updated Successfully.'})
+    elif email == updated_email or phone == updated_phone:
+        dealer_user = User.objects.get(id=db_id)
+        dealer_company_id = dealer_user.dealer_company_id
+        company = Company.objects.get(id=dealer_company_id)
+        company.name = company_name
+        company.save()
+        #dealer_user.email = updated_email
+        dealer_user.contact_email = contact_email
+        #dealer_user.phone = updated_phone
+        dealer_user.street = street
+        dealer_user.city = city
+        dealer_user.state = state
+        dealer_user.zip = zip
+        dealer_user.save()
+        return Response({'ok': True, 'message': 'User Updated Successfully.'})
+
+    else:
+        return Response({'ok': False, 'message': 'Email/Phone is in use'})
+
 
 
 
