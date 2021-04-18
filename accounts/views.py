@@ -540,6 +540,8 @@ def ValidateEmail(request):
 def UserInviteView(request):
     email = request.data.get('email')
     user_role = request.data.get('role')
+    first_name = request.data.get('first_name')
+    last_name = request.data.get('last_name')
     response = {"status": False, "message": "Invalid Email"}
     if email is None or user_role is None:
         return Response({'status': False, 'message': 'email and staff type is mandatory'}, HTTP_400_BAD_REQUEST)
@@ -582,7 +584,9 @@ def UserInviteView(request):
                                    invite_token=invite_token,
                                    token_status=True,
                                    generated_by=request.user.email,
-                                   dealer_company=request.user.dealer_company)
+                                   dealer_company=request.user.dealer_company,
+                                   first_name=first_name,
+                                   last_name=last_name)
             invited_user.save()
             # Send Email Invite
             send_invite_email(email, invite_token, request.user.dealer_company.name, user_role)
@@ -595,7 +599,9 @@ def UserInviteView(request):
                                    invite_token=invite_token,
                                    token_status=True,
                                    generated_by=request.user.email,
-                                   dealer_company=request.user.dealer_company)
+                                   dealer_company=request.user.dealer_company,
+                                   first_name = first_name,
+                                   last_name = last_name)
             invited_user.save()
             # Send Email Invite
             send_invite_email(email, invite_token, request.user.dealer_company.name, user_role)
@@ -646,9 +652,9 @@ def UserInviteRegisterView(request):
     phone = request.data.get('phone')
     invite_token = request.data.get('invite_token')
     role = request.data.get('role')
-    first_name = request.data.get('first_name')
-    last_name = request.data.get('last_name')
-    if email is None or password is None or phone is None or invite_token is None or role is None or first_name is None or last_name is None:
+    #first_name = request.data.get('first_name')
+    #last_name = request.data.get('last_name')
+    if email is None or password is None or phone is None or invite_token is None or role is None :
         return Response({
             'ok': False,
             'error': 'Invalid Request'
@@ -682,8 +688,8 @@ def UserInviteRegisterView(request):
         if not authy_user.ok():
             return Response({'ok': False, 'error': 'Please check your mobile number'}, HTTP_400_BAD_REQUEST)
         user = User.objects.create_user(email, authy_user.id, password, phone=phone, )
-        user.last_name = last_name
-        user.first_name = first_name
+        user.last_name = invite.last_name
+        user.first_name = invite.first_name
         user.dealer_company = invite.dealer_company
         if role == "dealer":
             user.dealer = True
@@ -826,7 +832,7 @@ def DealerList(request):
     user = request.user
     dealers_data_response = []
     if user.is_admin:
-        dealers_data = User.objects.filter(dealer= True).order_by('-id')
+        dealers_data = User.objects.filter(dealer= True, account_status= True).order_by('-id')#, active = True
         for dealer in dealers_data:
             data = {}
             data['id'] = dealer.id
