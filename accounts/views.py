@@ -862,97 +862,135 @@ def DealerList(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def UpdateStaff(request):
-    db_id = request.data.get('id')
-    company_name = request.data.get('company_name')
-    email = request.data.get('email')
-    contact_email = request.data.get('contact_email')
-    phone = request.data.get('phone')
-    street = request.data.get('street')
-    city = request.data.get('city')
-    state = request.data.get('state')
-    zip = request.data.get('zip')
-    first_name = request.data.get('first_name')
-    last_name = request.data.get('last_name')
-    roles = request.data.get('role')
-    updated_email = request.data.get('updated_email')
-    updated_phone = request.data.get('updated_phone')
-    db_user_email = User.objects.get(email=updated_email)
-    db_user_mob = User.objects.get(phone=updated_phone)
-    if db_user_email is None and db_user_mob is None :
-        dealer_user = User.objects.get(id = db_id)
-        dealer_company_id = dealer_user.dealer_company_id
-        company = Company.objects.get(id=dealer_company_id)
-        company.name = company_name
-        company.save()
-        dealer_user.email = updated_email
-        dealer_user.contact_email = contact_email
-        dealer_user.phone = updated_phone
-        dealer_user.street = street
-        dealer_user.city = city
-        dealer_user.state = state
-        dealer_user.zip = zip
-        dealer_user.first_name = first_name
-        dealer_user.last_name = last_name
-        dealer_user.save()
-        if roles is not None or roles!=[]:
-            for r in roles:
-                if r == 'sales':
-                    dealer_user.sales = True
-                elif r == 'dealer':
-                    dealer_user.dealer = True
+    req_user = request.user
+    if req_user.is_admin:
+        db_id = request.data.get('id')
+        company_name = request.data.get('company_name')
+        email = request.data.get('email')
+        contact_email = request.data.get('contact_email')
+        phone = request.data.get('phone')
+        street = request.data.get('street')
+        city = request.data.get('city')
+        state = request.data.get('state')
+        zip = request.data.get('zip')
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        roles = request.data.get('role')
+        updated_email = request.data.get('updated_email')
+        updated_phone = request.data.get('updated_phone')
+        db_user_email = User.objects.get(email=updated_email)
+        db_user_mob = User.objects.get(phone=updated_phone)
+        if db_user_email is None and db_user_mob is None :
+            dealer_user = User.objects.get(id = db_id)
+            dealer_company_id = dealer_user.dealer_company_id
+            company = Company.objects.get(id=dealer_company_id)
+            company.name = company_name
+            company.save()
+            dealer_user.email = updated_email
+            dealer_user.contact_email = contact_email
+            dealer_user.phone = updated_phone
+            dealer_user.street = street
+            dealer_user.city = city
+            dealer_user.state = state
+            dealer_user.zip = zip
+            dealer_user.first_name = first_name
+            dealer_user.last_name = last_name
             dealer_user.save()
-        return Response({'ok': True, 'message': 'User Updated Successfully.'})
-    elif email == updated_email :
-        dealer_user = User.objects.get(id=db_id)
-        dealer_company_id = dealer_user.dealer_company_id
-        company = Company.objects.get(id=dealer_company_id)
-        company.name = company_name
-        company.save()
-        #dealer_user.email = updated_email
-        dealer_user.contact_email = contact_email
-        #dealer_user.phone = updated_phone
-        dealer_user.street = street
-        dealer_user.city = city
-        dealer_user.state = state
-        dealer_user.zip = zip
-        dealer_user.first_name = first_name
-        dealer_user.last_name = last_name
-        dealer_user.save()
-        if roles is not None or roles!=[]:
-            for r in roles:
-                if r == 'sales':
-                    dealer_user.sales = True
-                elif r == 'dealer':
-                    dealer_user.dealer = True
+            if roles is not None or roles!=[]:
+                for r in roles:
+                    if r == 'sales':
+                        dealer_user.sales = True
+                    elif r == 'dealer':
+                        dealer_user.dealer = True
+                dealer_user.save()
+            return Response({'ok': True, 'message': 'User Updated Successfully.'})
+        elif email == updated_email :
+            dealer_user = User.objects.get(id=db_id)
+            dealer_company_id = dealer_user.dealer_company_id
+            company = Company.objects.get(id=dealer_company_id)
+            company.name = company_name
+            company.save()
+            #dealer_user.email = updated_email
+            dealer_user.contact_email = contact_email
+            #dealer_user.phone = updated_phone
+            dealer_user.street = street
+            dealer_user.city = city
+            dealer_user.state = state
+            dealer_user.zip = zip
+            dealer_user.first_name = first_name
+            dealer_user.last_name = last_name
             dealer_user.save()
-        return Response({'ok': True, 'message': 'User Updated Successfully.'})
-    elif phone == updated_phone:
-        dealer_user = User.objects.get(id=db_id)
-        dealer_company_id = dealer_user.dealer_company_id
-        company = Company.objects.get(id=dealer_company_id)
-        company.name = company_name
-        company.save()
-        #dealer_user.email = updated_email
-        dealer_user.contact_email = contact_email
-        #dealer_user.phone = updated_phone
-        dealer_user.street = street
-        dealer_user.city = city
-        dealer_user.state = state
-        dealer_user.zip = zip
-        dealer_user.first_name = first_name
-        dealer_user.last_name = last_name
-        dealer_user.save()
-        if roles is not None or roles!=[]:
-            for r in roles:
-                if r == 'sales':
-                    dealer_user.sales = True
-                elif r == 'dealer':
-                    dealer_user.dealer = True
+            if roles is not None or roles!=[]:
+                for r in roles:
+                    if r == 'sales':
+                        dealer_user.sales = True
+                    elif r == 'dealer':
+                        dealer_user.dealer = True
+                dealer_user.save()
+            return Response({'ok': True, 'message': 'User Updated Successfully.'})
+        elif phone == updated_phone:
+            dealer_user = User.objects.get(id=db_id)
+            dealer_company_id = dealer_user.dealer_company_id
+            company = Company.objects.get(id=dealer_company_id)
+            company.name = company_name
+            company.save()
+            #dealer_user.email = updated_email
+            dealer_user.contact_email = contact_email
+            #dealer_user.phone = updated_phone
+            dealer_user.street = street
+            dealer_user.city = city
+            dealer_user.state = state
+            dealer_user.zip = zip
+            dealer_user.first_name = first_name
+            dealer_user.last_name = last_name
             dealer_user.save()
-        return Response({'ok': True, 'message': 'User Updated Successfully.'})
+            if roles is not None or roles!=[]:
+                for r in roles:
+                    if r == 'sales':
+                        dealer_user.sales = True
+                    elif r == 'dealer':
+                        dealer_user.dealer = True
+                dealer_user.save()
+            return Response({'ok': True, 'message': 'User Updated Successfully.'})
 
+        else:
+            return Response({'ok': False, 'message': 'Email/Phone is in use'})
+    elif req_user.is_dealer:
+        db_id = request.data.get('id')
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        email = request.data.get('email')
+        roles = request.data.get('role')
+        if email is None or roles is None:
+            return Response({'ok': False, 'message': 'email and staff type is mandatory'}, HTTP_400_BAD_REQUEST)
+        elif email.isnumeric() or '@' not in email or '.' not in email:
+            return Response({'ok': False, 'message': 'email is not correct.'}, HTTP_400_BAD_REQUEST)
+        user = User.objects.filter(email=email).exclude(id = db_id).first()
+        if user is not None:
+            return Response({
+                'status': False,
+                'message': 'User {} is already in use'.format(email)
+            }, HTTP_400_BAD_REQUEST)
+        user = User.objects.get(id = db_id)
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
+        user.save()
+        for r in roles:
+            if r == 'sales':
+                user.sales = True
+            elif r == 'dealer':
+                user.dealer = True
+        user.save()
+        return Response({'ok': True, 'message': 'User Updated Successfully.'})
     else:
-        return Response({'ok': False, 'message': 'Email/Phone is in use'})
+        return Response({'ok': True, 'message': 'User don not have permission to Update'})
+
+
+
+
+
+
 
 
 
