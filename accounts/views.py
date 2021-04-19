@@ -863,6 +863,8 @@ def UpdateStaff(request):
     city = request.data.get('city')
     state = request.data.get('state')
     zip = request.data.get('zip')
+    first_name = request.data.get('first_name')
+    last_name = request.data.get('last_name')
     updated_email = request.data.get('updated_email')
     updated_phone = request.data.get('updated_phone')
     db_user_email = User.objects.get(email=updated_email)
@@ -880,9 +882,11 @@ def UpdateStaff(request):
         dealer_user.city = city
         dealer_user.state = state
         dealer_user.zip = zip
+        dealer_user.first_name = first_name
+        dealer_user.last_name = last_name
         dealer_user.save()
         return Response({'ok': True, 'message': 'User Updated Successfully.'})
-    elif email == updated_email or phone == updated_phone:
+    elif email == updated_email :
         dealer_user = User.objects.get(id=db_id)
         dealer_company_id = dealer_user.dealer_company_id
         company = Company.objects.get(id=dealer_company_id)
@@ -895,6 +899,25 @@ def UpdateStaff(request):
         dealer_user.city = city
         dealer_user.state = state
         dealer_user.zip = zip
+        dealer_user.first_name = first_name
+        dealer_user.last_name = last_name
+        dealer_user.save()
+        return Response({'ok': True, 'message': 'User Updated Successfully.'})
+    elif phone == updated_phone:
+        dealer_user = User.objects.get(id=db_id)
+        dealer_company_id = dealer_user.dealer_company_id
+        company = Company.objects.get(id=dealer_company_id)
+        company.name = company_name
+        company.save()
+        #dealer_user.email = updated_email
+        dealer_user.contact_email = contact_email
+        #dealer_user.phone = updated_phone
+        dealer_user.street = street
+        dealer_user.city = city
+        dealer_user.state = state
+        dealer_user.zip = zip
+        dealer_user.first_name = first_name
+        dealer_user.last_name = last_name
         dealer_user.save()
         return Response({'ok': True, 'message': 'User Updated Successfully.'})
 
