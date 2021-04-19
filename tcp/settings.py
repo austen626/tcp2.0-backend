@@ -102,28 +102,28 @@ WSGI_APPLICATION = 'tcp.wsgi.application'
 #     }
 # }
 
-# DATABASES = {
-#   'default': {
-#     'ENGINE': 'django.db.backends.mysql',
-#     'NAME': 'tcp2_145_dev_db',
-#     'USER': 'cloudproxy',
-#     'PASSWORD': 'xCpkX6W5UCHf2c4P',
-#     'HOST': '127.0.0.1',
-#     'PORT': '3306',
-#     'OPTIONS': {},
-#   }
-# }
 DATABASES = {
   'default': {
     'ENGINE': 'django.db.backends.mysql',
     'NAME': 'tcp2_145_dev_db',
-    'USER': 'tcp2-145-dev-db-user',
-    'PASSWORD': 'p8TzbvQ2ctmbVnD3',
-    'HOST': '35.230.166.190',
+    'USER': 'cloudproxy',
+    'PASSWORD': 'xCpkX6W5UCHf2c4P',
+    'HOST': '127.0.0.1',
     'PORT': '3306',
     'OPTIONS': {},
   }
 }
+# DATABASES = {
+#   'default': {
+#     'ENGINE': 'django.db.backends.mysql',
+#     'NAME': 'tcp2_145_dev_db',
+#     'USER': 'tcp2-145-dev-db-user',
+#     'PASSWORD': 'p8TzbvQ2ctmbVnD3',
+#     'HOST': '35.230.166.190',
+#     'PORT': '3306',
+#     'OPTIONS': {},
+#   }
+# }
 
 
 # Password validation
