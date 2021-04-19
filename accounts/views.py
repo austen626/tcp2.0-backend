@@ -834,6 +834,13 @@ def DealerList(request):
     if user.is_admin:
         dealers_data = User.objects.filter(dealer= True, account_status= True).order_by('-id')#, active = True
         for dealer in dealers_data:
+            role = []
+            if dealer.is_sales:
+                role.append('sales')
+            if dealer.is_dealer:
+                role.append('dealer')
+            if dealer.is_admin:
+                role.append('admin')
             data = {}
             data['id'] = dealer.id
             data['company_name'] = dealer.dealer_company.name
@@ -846,6 +853,7 @@ def DealerList(request):
             data['city'] = dealer.city
             data['state'] = dealer.state
             data['zip'] = dealer.zip
+            data['role'] = role
             dealers_data_response.append(data)
         return Response({'ok':True,'data':dealers_data_response})
     else:
