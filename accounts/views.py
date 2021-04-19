@@ -865,6 +865,7 @@ def UpdateStaff(request):
     zip = request.data.get('zip')
     first_name = request.data.get('first_name')
     last_name = request.data.get('last_name')
+    roles = request.data.get('role')
     updated_email = request.data.get('updated_email')
     updated_phone = request.data.get('updated_phone')
     db_user_email = User.objects.get(email=updated_email)
@@ -885,6 +886,13 @@ def UpdateStaff(request):
         dealer_user.first_name = first_name
         dealer_user.last_name = last_name
         dealer_user.save()
+        if roles is not None or roles!=[]:
+            for r in roles:
+                if r == 'sales':
+                    dealer_user.sales = True
+                elif r == 'dealer':
+                    dealer_user.dealer = True
+            dealer_user.save()
         return Response({'ok': True, 'message': 'User Updated Successfully.'})
     elif email == updated_email :
         dealer_user = User.objects.get(id=db_id)
@@ -902,6 +910,13 @@ def UpdateStaff(request):
         dealer_user.first_name = first_name
         dealer_user.last_name = last_name
         dealer_user.save()
+        if roles is not None or roles!=[]:
+            for r in roles:
+                if r == 'sales':
+                    dealer_user.sales = True
+                elif r == 'dealer':
+                    dealer_user.dealer = True
+            dealer_user.save()
         return Response({'ok': True, 'message': 'User Updated Successfully.'})
     elif phone == updated_phone:
         dealer_user = User.objects.get(id=db_id)
@@ -919,6 +934,13 @@ def UpdateStaff(request):
         dealer_user.first_name = first_name
         dealer_user.last_name = last_name
         dealer_user.save()
+        if roles is not None or roles!=[]:
+            for r in roles:
+                if r == 'sales':
+                    dealer_user.sales = True
+                elif r == 'dealer':
+                    dealer_user.dealer = True
+            dealer_user.save()
         return Response({'ok': True, 'message': 'User Updated Successfully.'})
 
     else:
