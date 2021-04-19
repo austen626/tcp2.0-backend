@@ -782,7 +782,7 @@ def AddDealer(request):
                                dealer_company=company)
         invited_user.save()
         # Send Email Invite
-        send_invite_email_dealer(dealer_email, invite_token, dealer_company_name, 'dealer')
+        send_invite_email(dealer_email, invite_token, dealer_company_name, 'dealer')
         response['message'] = "Invite email has been sent"
         return Response(response)
 
