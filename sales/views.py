@@ -23,7 +23,7 @@ from .nortridge import getToken, revokeToken, createContact, searchContacts, get
 from .nortridge import getToken, revokeToken, createContact, searchContacts, getContact
 from rest_framework.parsers import MultiPartParser
 from .nortridge import getToken, revokeToken, createContact, searchContacts, getContact, getContactloan, \
-    getPaymentHistory
+    getPaymentHistory,searchContactsByName
 from .utils import xstr
 from .hellosignapi import get_all_signature_status
 from .hellosignapi import sendEmailOkay, delete_signature_request
@@ -1011,7 +1011,7 @@ def SearchCustomerViewNortridge(request):
     data = request.data
     result = []
     try:
-        r = searchContacts(data["name"], data["city"])
+        r = searchContactsByName(data['first_name'],data['last_name'])#searchContacts(data["name"], data["city"])
         final = r['payload']['data']
         for data in final:
             print(data)

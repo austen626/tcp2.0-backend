@@ -185,6 +185,36 @@ def searchContacts(last_name, city):
         result = r.json()
         return result
 
+def searchContactsByName(first_name,last_name):
+    try:
+        token = getdbToken()
+        url = "https://api.nortridgehosting.com/10.0.1/contacts/search"
+        header = {
+            "Authorization": "Bearer " + token
+        }
+        data = {
+            "Firstname1":"%"+first_name,
+            "Lastname1": "%"+last_name
+        }
+        r = requests.post(url, headers=header, data=data)
+        result = r.json()
+        if result['status']['code'] != 200:
+            raise Exception("Invalid Token No data found")
+        return result
+    except Exception as e:
+        token = updatedbToken()
+        url = "https://api.nortridgehosting.com/10.0.1/contacts/search"
+        header = {
+            "Authorization": "Bearer " + token
+        }
+        data = {
+            "Firstname1": "%" + first_name,
+            "Lastname1": "%" + last_name
+        }
+        r = requests.post(url, headers=header, data=data)
+        result = r.json()
+        return result
+
 
 def getContact(cifno):
     try:
