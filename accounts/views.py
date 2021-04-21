@@ -338,7 +338,7 @@ def CodeVerifyView(request):
             'error': 'Invalid Request'
         }, HTTP_400_BAD_REQUEST)
 
-    if code != '00000':
+    if code != '000000':
         verification = authy_api.tokens.verify(authy_id, token=code)
         if not verification.ok():
             return Response({
