@@ -185,7 +185,7 @@ def searchContacts(last_name, city):
         result = r.json()
         return result
 
-def searchContactsByName(first_name,last_name):
+def searchContactsByPhoneEmail(phone,email):
     try:
         token = getdbToken()
         url = "https://api.nortridgehosting.com/10.0.1/contacts/search"
@@ -193,11 +193,12 @@ def searchContactsByName(first_name,last_name):
             "Authorization": "Bearer " + token
         }
         data = {
-            "Firstname1":"%"+first_name,
-            "Lastname1": "%"+last_name
+            "Phone_Number":phone,
+            "Email": email
         }
         r = requests.post(url, headers=header, data=data)
         result = r.json()
+        print(result)
         if result['status']['code'] != 200:
             raise Exception("Invalid Token No data found")
         return result
@@ -208,11 +209,12 @@ def searchContactsByName(first_name,last_name):
             "Authorization": "Bearer " + token
         }
         data = {
-            "Firstname1": "%" + first_name,
-            "Lastname1": "%" + last_name
+            "Phone_Number": phone,
+            "Email": email
         }
         r = requests.post(url, headers=header, data=data)
         result = r.json()
+        print(result)
         return result
 
 

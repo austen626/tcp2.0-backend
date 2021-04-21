@@ -21,6 +21,7 @@ class Customer(models.Model):
     zip = models.CharField(max_length=101, null=True, blank=True)
     years_there_first = models.CharField(max_length=11, null=True, blank=True)
     own_or_rent = models.CharField(max_length=6, null=True, blank=True)
+    employement_status = models.BooleanField(default=False)
     present_employer = models.CharField(max_length=31, null=True, blank=True)
     years_there_second = models.CharField(max_length=11, null=True, blank=True)
     job_title = models.CharField(max_length=101, null=True, blank=True)

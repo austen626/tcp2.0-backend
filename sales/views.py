@@ -23,7 +23,7 @@ from .nortridge import getToken, revokeToken, createContact, searchContacts, get
 from .nortridge import getToken, revokeToken, createContact, searchContacts, getContact
 from rest_framework.parsers import MultiPartParser
 from .nortridge import getToken, revokeToken, createContact, searchContacts, getContact, getContactloan, \
-    getPaymentHistory,searchContactsByName
+    getPaymentHistory,searchContactsByPhoneEmail
 from .utils import xstr
 from .hellosignapi import get_all_signature_status
 from .hellosignapi import sendEmailOkay, delete_signature_request
@@ -982,7 +982,7 @@ def AppByIdView(request, pk):
 @permission_classes([IsAuthenticated])
 def SearchCustomerViewLocal(request):
     data = request.data
-    customers = Customer.objects.filter(name__icontains=data["name"]).filter(city__icontains=data["city"])
+    customers = Customer.objects.filter(email__icontains=data["email"]).filter(cell_phone__icontains=data["phone"])
     result = []
     for customer in customers:
         if customer.dobD is None or customer.dobM is None or customer.dobY is None:
@@ -1011,10 +1011,10 @@ def SearchCustomerViewNortridge(request):
     data = request.data
     result = []
     try:
-        r = searchContactsByName(data['first_name'],data['last_name'])#searchContacts(data["name"], data["city"])
+        r = searchContactsByPhoneEmail(data['phone'],data['email'])#searchContacts(data["name"], data["city"])
         final = r['payload']['data']
         for data in final:
-            print(data)
+            print(data,'..................')
             result.append(data)
     except Exception as e:
         print(e,"No Data found")
@@ -2230,6 +2230,7 @@ def GetCustomersByCif(request):
 
     try:
         customer = getContact(cif_number)
+        print(customer)
         result = {
             "cifno": customer['Cifno'],
             "nortridge_cif_number":customer['Cifnumber'],#TCP customer number
@@ -2725,3 +2726,112 @@ def HellosignReminder(request, pk):
         return Response(response)
     else:
         return Response({'detail': "Reminder already sent for this ID, Please try after 1 hour."}, HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def AppCredict(request):
+    data = request.data
+    contact = data["contact"]
+    #products = data["products"]
+    main_app = contact["main_app"]
+    co_app = contact["co_app"]
+    co_enabled = contact["co_enabled"]
+    #co_complete = contact["co_complete"]
+    #co_separate = contact["co_separate"]
+    existing_id_cif = contact["existing_customer_id"]
+    #preapproval_id = contact["preapproval_id"]
+    if existing_id_cif == 0:
+        main_customer = Customer(
+            name=main_app["name"],
+            email=main_app["email"],
+            dobY=main_app["dobY"],
+            dobM=main_app["dobM"],
+            dobD=main_app["dobD"],
+            ssn=main_app["ssn"],
+            driver_license=main_app["dl"],
+            no_of_dependents=main_app["nod"],
+            cell_phone=main_app["cell_phone"],
+            home_phone=main_app["home_phone"],
+            street=main_app["street"],
+            city=main_app["city"],
+            state=main_app["state"],
+            zip=main_app["zip"],
+            years_there_first=main_app["yt1"],
+            own_or_rent=main_app["own_or_rent"],
+            present_employer=main_app["present_employer"],
+            years_there_second=main_app["yt2"],
+            job_title=main_app["job_title"],
+            employer_phone=main_app["employer_phone"],
+            monthly_income=main_app["monthly_income"],
+            additional_income=main_app["additional_income"],
+            source=main_app["source"],
+            landlord_mortgage_holder=main_app["landlord_holder"],
+            monthly_rent_mortgage_payment=main_app["monthly_rent_payment"]
+        )
+        main_customer.save()
+        #dealer company info
+        user = User.objects.get(email=request.user.email)
+        company = Company.objects.get(id=user.dealer_company_id)
+        print(company.contact_type,company.contact_code)
+
+        main_customer.cif_number = createContact(main_customer)
+        main_customer.save()
+        application = Application(applicant=main_customer)
+        application.salesperson_email = request.user.email
+
+        today = datetime.date.today()
+        third_date = check_public_holiday(today + datetime.timedelta(days=3))
+        if main_customer.state == "ME":
+            third_date = check_public_holiday(today + datetime.timedelta(days=12))
+
+
+        co_enabled = contact["co_enabled"]
+        if co_enabled == True:
+            co_customer = Customer(
+                name=co_app["name"],
+                email=co_app["email"],
+                dobY=co_app["dobY"],
+                dobM=co_app["dobM"],
+                dobD=co_app["dobD"],
+                ssn=co_app["ssn"],
+                driver_license=co_app["dl"],
+                no_of_dependents=co_app["nod"],
+                cell_phone=co_app["cell_phone"],
+                home_phone=co_app["home_phone"],
+                street=co_app["street"],
+                city=co_app["city"],
+                state=co_app["state"],
+                zip=co_app["zip"],
+                years_there_first=co_app["yt1"],
+                own_or_rent=co_app["own_or_rent"],
+                present_employer=co_app["present_employer"],
+                years_there_second=co_app["yt2"],
+                job_title=co_app["job_title"],
+                employer_phone=co_app["employer_phone"],
+                monthly_income=co_app["monthly_income"],
+                additional_income=co_app["additional_income"],
+                source=co_app["source"],
+                landlord_mortgage_holder=co_app["landlord_holder"],
+                monthly_rent_mortgage_payment=co_app["monthly_rent_payment"]
+            )
+            co_customer.save()
+            co_customer.cif_number = createContact(co_customer)
+            co_customer.save()
+
+            application.co_applicant = co_customer
+            application.co_enabled = True
+
+            third_date = check_public_holiday(today + datetime.timedelta(days=3))
+            if co_customer.state == "ME":
+                third_date = check_public_holiday(today + datetime.timedelta(days=12))
+
+
+        #application.status = "waiting"
+        application.created_at = datetime.date.today()
+        application.save()
+
+        return Response({
+            'ok': True
+        })

@@ -7,6 +7,7 @@ urlpatterns = [
     path('apps', AppsView),
     path('app/<int:pk>', AppByIdView),
     path('apps-nohello', Appsnohello),
+    path('apps-credit', AppCredict),
 
     path('search-customer-local', SearchCustomerViewLocal),
     path('search-customer-nortridge', SearchCustomerViewNortridge),
