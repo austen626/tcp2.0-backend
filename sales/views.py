@@ -69,6 +69,23 @@ def send_invite_email(email, invite_id, dealer_company):
         msg.attach_alternative(html_message, 'text/html')
     msg.send()
     return True
+def send_link_email(email, doc_id, phone, dealer_company):
+    if email is None:
+        return False
+    emails = [email]
+    subject = "TCP Credit application"
+    message = "Dear User,\n\n"
+    message += "Credit application is on"+ dealer_company+"\n\n  Please fill details in the link-"
+    message += settings.INVITE_CREDIT_APP_URL + str(doc_id) + "&phone=" + phone + "&email=" + email
+    message += "\n\nThanks!\nTravis Capital Partners"
+
+    from_email = settings.DEFAULT_EMAIL_FROM
+    html_message = ""
+    msg = EmailMultiAlternatives(subject, message, from_email, emails)
+    if html_message:
+        msg.attach_alternative(html_message, 'text/html')
+    msg.send()
+    return True
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -2759,16 +2776,29 @@ def AppCredict(request):
     state = request.data.get('state')
     zip_code = request.data.get('zip_code')
     action = request.data.get('action')
+    # dealer company info
+    user = User.objects.get(email=request.user.email)
+    company = Company.objects.get(id=user.dealer_company_id)
+
     if action is None:
         return Response({
             'ok': False,
             'error': 'Action attribute is mising.'
         }, HTTP_400_BAD_REQUEST)
+
     if action == 'ondevice':
         print(action)
+        #all_field_data = model_to_dict(customer, fields=[field.name for field in customer._meta.fields])
+
+        return Response({
+                            'ok': True,
+                            'message': 'Customer has been saved.',
+                            'data':request.data
+                        })
+    elif action == 'onlink':
         customer = Customer.objects.filter(email=customer_email, cell_phone=customer_phone).first()
         if customer is None:
-            customer = Customer(email = customer_email, name = name)
+            customer = Customer(email=customer_email, name=name)
             customer.save()
         customer.first_name = first_name
         customer.last_name = last_name
@@ -2779,28 +2809,37 @@ def AppCredict(request):
         customer.state = state
         customer.zip = zip_code
         customer.save()
-        all_field_data = model_to_dict(customer, fields=[field.name for field in customer._meta.fields])
+        result = send_link_email(customer_email, customer.id , customer_phone, company.name)
+        return Response({
+            'ok': result,
+            'message': 'Mail has been sent.'
+        })
+    elif action == 'save&exit':
+        customer = Customer.objects.filter(email=customer_email, cell_phone=customer_phone).first()
+        if customer is None:
+            customer = Customer(email=customer_email, name=name)
+            customer.save()
+        customer.first_name = first_name
+        customer.last_name = last_name
+        customer.name = name
+        customer.cell_phone = customer_phone
+        customer.street = street
+        customer.city = city
+        customer.state = state
+        customer.zip = zip_code
+        customer.save()
 
         return Response({
-                            'ok': True,
-                            'message': 'Customer has been saved.',
-                            'data':all_field_data
-                        })
+            'ok': result,
+            'message': 'Data saved.'
+        })
+
+
     else:
         return Response({
             'ok': False,
             'message': 'action attribute is not correct.'
         })
-
-
-
-
-
-
-    #fulldata =
-
-
-
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -2813,7 +2852,7 @@ def AppCredictDetails(request):
     co_complete = contact["co_complete"]
     co_separate = contact["co_separate"]
     existing_id = contact["existing_customer_id"]
-    if existing_id is not None:
+    if existing_id is not None and existing_id !=0:
         main_customer = Customer.objects.get(id = existing_id)
         main_customer.name = main_app["name"]
         main_customer.email = main_app["email"]
@@ -2901,6 +2940,96 @@ def AppCredictDetails(request):
         send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
 
 
+
+        return Response({
+            'ok': True
+        })
+    elif existing_id == 0:
+        main_customer = Customer(email = main_app["email"], name = main_app["name"])
+        main_customer.save()
+        #main_customer.name = main_app["name"]
+        #main_customer.email = main_app["email"]
+        main_customer.dobY = main_app["dobY"]
+        main_customer.dobM = main_app["dobM"]
+        main_customer.dobD = main_app["dobD"]
+        main_customer.ssn = main_app["ssn"]
+        main_customer.driver_license = main_app["dl"]
+        main_customer.no_of_dependents = main_app["nod"]
+        main_customer.cell_phone = main_app["cell_phone"]
+        main_customer.home_phone = main_app["home_phone"]
+        main_customer.street = main_app["street"]
+        main_customer.city = main_app["city"]
+        main_customer.state = main_app["state"]
+        main_customer.zip = main_app["zip"]
+        main_customer.years_there_first = main_app["yt1"]
+        main_customer.own_or_rent = main_app["own_or_rent"]
+        main_customer.present_employer = main_app["present_employer"]
+        main_customer.years_there_second = main_app["yt2"]
+        main_customer.job_title = main_app["job_title"]
+        main_customer.employer_phone = main_app["employer_phone"]
+        main_customer.monthly_income = main_app["monthly_income"]
+        main_customer.additional_income = main_app["additional_income"]
+        main_customer.source = main_app["source"]
+        main_customer.landlord_mortgage_holder = main_app["landlord_holder"]
+        main_customer.monthly_rent_mortgage_payment = main_app["monthly_rent_payment"]
+        main_customer.employement_status = main_app['employement_status']
+        main_customer.first_name = main_app['first_name']
+        main_customer.last_name = main_app['last_name']
+        main_customer.save()
+        # dealer company info
+        user = User.objects.get(email=request.user.email)
+        company = Company.objects.get(id=user.dealer_company_id)
+        print(company.contact_type, company.contact_code)
+
+        main_customer.cif_number = createContact(main_customer)
+        main_customer.save()
+        credit_application = CreditApplication(credit_app=main_customer)
+        credit_application.salesperson_email = request.user.email
+
+        co_enabled = contact["co_enabled"]
+        if co_enabled == True:
+            co_customer = Customer(
+                name=co_app["name"],
+                email=co_app["email"],
+                dobY=co_app["dobY"],
+                dobM=co_app["dobM"],
+                dobD=co_app["dobD"],
+                ssn=co_app["ssn"],
+                driver_license=co_app["dl"],
+                no_of_dependents=co_app["nod"],
+                cell_phone=co_app["cell_phone"],
+                home_phone=co_app["home_phone"],
+                street=co_app["street"],
+                city=co_app["city"],
+                state=co_app["state"],
+                zip=co_app["zip"],
+                years_there_first=co_app["yt1"],
+                own_or_rent=co_app["own_or_rent"],
+                present_employer=co_app["present_employer"],
+                years_there_second=co_app["yt2"],
+                job_title=co_app["job_title"],
+                employer_phone=co_app["employer_phone"],
+                monthly_income=co_app["monthly_income"],
+                additional_income=co_app["additional_income"],
+                source=co_app["source"],
+                landlord_mortgage_holder=co_app["landlord_holder"],
+                monthly_rent_mortgage_payment=co_app["monthly_rent_payment"],
+                employement_status=co_app['employement_status'],
+                first_name=co_app['first_name'],
+                last_name=co_app['last_name']
+            )
+            co_customer.save()
+            co_customer.cif_number = createContact(co_customer)
+            co_customer.save()
+
+            credit_application.co_applicant = co_customer
+            credit_application.co_enabled = True
+
+        credit_application.status = "completed"
+        credit_application.created_at = datetime.date.today()
+        credit_application.save()
+        send_invite_email(main_customer.email, existing_id, company.name)
+        send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
 
         return Response({
             'ok': True
