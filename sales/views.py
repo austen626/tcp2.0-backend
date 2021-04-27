@@ -1040,6 +1040,59 @@ def SearchCustomerViewLocal(request):
 
 
 # Nortridge Search
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def SearchCustomer(request):
+    data = request.data
+    customer = Customer.objects.get(email = data['email'], cell_phone = data['phone'])
+    if customer is not None:
+        #converting db row to dict
+        all_field_data = model_to_dict(customer, fields=[field.name for field in customer._meta.fields])
+        return Response({'ok':True,'data':all_field_data})
+    result = []
+    try:
+        r = searchContactsByPhoneEmail(data['phone'], data['email'])  # searchContacts(data["name"], data["city"])
+        final = r['payload']['data']
+        for data in final:
+            print(data, '..................')
+            result.append(data)
+    except Exception as e:
+        print(e, "No Data found")
+        return Response({'ok':True,'data':[], 'msg':'No Data found'})
+    for r in result:
+        cif_no = r['cif_no']
+        try:
+            nor_customer = getContact(cif_no)
+            print(nor_customer)
+            result = {
+                "cifno": nor_customer['Cifno'],
+                "nortridge_cif_number": nor_customer['Cifnumber'],  # TCP customer number
+                "name": nor_customer['Firstname1'],
+                "lastname": nor_customer['Lastname1'],
+                "email": nor_customer['Email'],
+                "street": nor_customer['Street_Address1'],
+                "city": nor_customer['City'],
+                "state": nor_customer['State'],
+                "county": nor_customer['County'],
+                "zip": nor_customer['Zip'],
+                "cell_phone": nor_customer['Cif_Phone_Nums'][0]['Phone_Raw'],
+                "dob": nor_customer['Dob'],
+                "tin": nor_customer['Tin'],
+                "fulldata": nor_customer
+            }
+
+            if len(customer['Cif_Phone_Nums']) > 1:
+                result["home_phone"] = nor_customer['Cif_Phone_Nums'][1]['Phone_Raw']
+            else:
+                print("Nothing")
+            return Response(result)
+        except Exception as e:
+            print(e)
+            return Response("Customer Not Found", HTTP_400_BAD_REQUEST)
+
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def SearchCustomerViewNortridge(request):
@@ -2945,7 +2998,7 @@ def AppCredictDetails(request):
             'ok': True
         })
     elif existing_id == 0:
-        main_customer = Customer(email = main_app["email"], name = main_app["name"])
+        main_customer = Customer(email = main_app["email"], cell_phone = main_app["phone"])
         main_customer.save()
         #main_customer.name = main_app["name"]
         #main_customer.email = main_app["email"]
