@@ -1049,7 +1049,20 @@ def SearchCustomer(request):
     if customer is not None:
         #converting db row to dict
         all_field_data = model_to_dict(customer, fields=[field.name for field in customer._meta.fields])
-        return Response({'ok':True,'data':all_field_data})
+        credit_application = None
+        try:
+            credit_application = CreditApplication.objects.get(credit_app_id=customer.id)
+        except:
+            pass
+        result = {}
+        result['main_app'] = all_field_data
+        if credit_application is not None:
+            co_customer = Customer.objects.get(id=credit_application.credit_co_app_id)
+            result['co_enabled'] = True
+            result['co_app'] = model_to_dict(co_customer, fields=[field.name for field in co_customer._meta.fields])
+        else:
+            result['co_enabled'] = False
+        return Response({'ok':True,'data':result})
     result = []
     try:
         r = searchContactsByPhoneEmail(data['phone'], data['email'])  # searchContacts(data["name"], data["city"])
@@ -2851,7 +2864,7 @@ def AppCredict(request):
     elif action == 'onlink':
         customer = Customer.objects.filter(email=customer_email, cell_phone=customer_phone).first()
         if customer is None:
-            customer = Customer(email=customer_email, name=name)
+            customer = Customer(email=customer_email, cell_phone=customer_phone)
             customer.save()
         customer.first_name = first_name
         customer.last_name = last_name
@@ -2870,7 +2883,7 @@ def AppCredict(request):
     elif action == 'save&exit':
         customer = Customer.objects.filter(email=customer_email, cell_phone=customer_phone).first()
         if customer is None:
-            customer = Customer(email=customer_email, name=name)
+            customer = Customer(email=customer_email, cell_phone=customer_phone)
             customer.save()
         customer.first_name = first_name
         customer.last_name = last_name
@@ -2883,7 +2896,7 @@ def AppCredict(request):
         customer.save()
 
         return Response({
-            'ok': result,
+            'ok': True,
             'message': 'Data saved.'
         })
 
@@ -2904,7 +2917,7 @@ def AppCredictDetails(request):
     co_enabled = contact["co_enabled"]
     co_complete = contact["co_complete"]
     co_separate = contact["co_separate"]
-    existing_id = contact["existing_customer_id"]
+    existing_id = contact["id"]
     if existing_id is not None and existing_id !=0:
         main_customer = Customer.objects.get(id = existing_id)
         main_customer.name = main_app["name"]
@@ -2913,25 +2926,25 @@ def AppCredictDetails(request):
         main_customer.dobM = main_app["dobM"]
         main_customer.dobD = main_app["dobD"]
         main_customer.ssn = main_app["ssn"]
-        main_customer.driver_license = main_app["dl"]
-        main_customer.no_of_dependents = main_app["nod"]
+        main_customer.driver_license = main_app["driver_license"]
+        main_customer.no_of_dependents = main_app["no_of_dependents"]
         main_customer.cell_phone = main_app["cell_phone"]
         main_customer.home_phone = main_app["home_phone"]
         main_customer.street = main_app["street"]
         main_customer.city = main_app["city"]
         main_customer.state = main_app["state"]
         main_customer.zip = main_app["zip"]
-        main_customer.years_there_first = main_app["yt1"]
+        main_customer.years_there_first = main_app["years_there_first"]
         main_customer.own_or_rent = main_app["own_or_rent"]
         main_customer.present_employer = main_app["present_employer"]
-        main_customer.years_there_second = main_app["yt2"]
+        main_customer.years_there_second = main_app["years_there_second"]
         main_customer.job_title = main_app["job_title"]
         main_customer.employer_phone = main_app["employer_phone"]
         main_customer.monthly_income = main_app["monthly_income"]
         main_customer.additional_income = main_app["additional_income"]
         main_customer.source = main_app["source"]
-        main_customer.landlord_mortgage_holder = main_app["landlord_holder"]
-        main_customer.monthly_rent_mortgage_payment = main_app["monthly_rent_payment"]
+        main_customer.landlord_mortgage_holder = main_app["landlord_mortgage_holder"]
+        main_customer.monthly_rent_mortgage_payment = main_app["monthly_rent_mortgage_payment"]
         main_customer.employement_status = main_app['employement_status']
         main_customer.first_name = main_app['first_name']
         main_customer.last_name = main_app['last_name']
@@ -2941,56 +2954,58 @@ def AppCredictDetails(request):
         company = Company.objects.get(id=user.dealer_company_id)
         print(company.contact_type,company.contact_code)
 
-        main_customer.cif_number = createContact(main_customer)
+        main_customer.cif_number = '15818'#createContact(main_customer)
         main_customer.save()
-        credit_application = CreditApplication(credit_app = main_customer)
+        credit_application = CreditApplication.objects.get(credit_app_id = main_customer.id)#(credit_app = main_customer)
         credit_application.salesperson_email = request.user.email
+        #credit_application.save()
+        print(credit_application.credit_co_app_id,'-----------00---')
 
 
         co_enabled = contact["co_enabled"]
         if co_enabled == True:
-            co_customer = Customer(
-                name=co_app["name"],
-                email=co_app["email"],
-                dobY=co_app["dobY"],
-                dobM=co_app["dobM"],
-                dobD=co_app["dobD"],
-                ssn=co_app["ssn"],
-                driver_license=co_app["dl"],
-                no_of_dependents=co_app["nod"],
-                cell_phone=co_app["cell_phone"],
-                home_phone=co_app["home_phone"],
-                street=co_app["street"],
-                city=co_app["city"],
-                state=co_app["state"],
-                zip=co_app["zip"],
-                years_there_first=co_app["yt1"],
-                own_or_rent=co_app["own_or_rent"],
-                present_employer=co_app["present_employer"],
-                years_there_second=co_app["yt2"],
-                job_title=co_app["job_title"],
-                employer_phone=co_app["employer_phone"],
-                monthly_income=co_app["monthly_income"],
-                additional_income=co_app["additional_income"],
-                source=co_app["source"],
-                landlord_mortgage_holder=co_app["landlord_holder"],
-                monthly_rent_mortgage_payment=co_app["monthly_rent_payment"],
-                employement_status=co_app['employement_status'],
-                first_name=co_app['first_name'],
-                last_name=co_app['last_name']
-            )
-            co_customer.save()
-            co_customer.cif_number = createContact(co_customer)
+            co_customer = Customer.objects.get(id=credit_application.credit_co_app_id)
+            co_customer.name = co_app["name"]
+            co_customer.email = co_app["email"]
+            co_customer.dobY = co_app["dobY"]
+            co_customer.dobM = co_app["dobM"]
+            co_customer.dobD = co_app["dobD"]
+            co_customer.ssn = co_app["ssn"]
+            co_customer.driver_license = co_app["driver_license"]
+            co_customer.no_of_dependents = co_app["no_of_dependents"]
+            co_customer.cell_phone = co_app["cell_phone"]
+            co_customer.home_phone = co_app["home_phone"]
+            co_customer.street = co_app["street"]
+            co_customer.city = co_app["city"]
+            co_customer.state = co_app["state"]
+            co_customer.zip = co_app["zip"]
+            co_customer.years_there_first = co_app["years_there_first"]
+            co_customer.own_or_rent = co_app["own_or_rent"]
+            co_customer.present_employer = co_app["present_employer"]
+            co_customer.years_there_second = co_app["years_there_second"]
+            co_customer.job_title = co_app["job_title"]
+            co_customer.employer_phone = co_app["employer_phone"]
+            co_customer.monthly_income = co_app["monthly_income"]
+            co_customer.additional_income = co_app["additional_income"]
+            co_customer.source = co_app["source"]
+            co_customer.landlord_mortgage_holder = co_app["landlord_mortgage_holder"]
+            co_customer.monthly_rent_mortgage_payment = co_app["monthly_rent_mortgage_payment"]
+            co_customer.employement_status = co_app['employement_status']
+            co_customer.first_name = co_app['first_name']
+            co_customer.last_name = co_app['last_name']
             co_customer.save()
 
-            credit_application.co_applicant = co_customer
+            co_customer.cif_number = '15817'#createContact(co_customer)
+            co_customer.save()
+
+            credit_application.credit_co_app = co_customer
             credit_application.co_enabled = True
 
         credit_application.status = "completed"
         credit_application.created_at = datetime.date.today()
         credit_application.save()
-        send_invite_email(main_customer.email, existing_id, company.name)
-        send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
+        #send_invite_email(main_customer.email, existing_id, company.name)
+        #send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
 
 
 
@@ -2998,33 +3013,33 @@ def AppCredictDetails(request):
             'ok': True
         })
     elif existing_id == 0:
-        main_customer = Customer(email = main_app["email"], cell_phone = main_app["phone"])
+        main_customer = Customer(email = main_app["email"], cell_phone = main_app["cell_phone"])
         main_customer.save()
-        #main_customer.name = main_app["name"]
+        main_customer.name = main_app["name"]
         #main_customer.email = main_app["email"]
         main_customer.dobY = main_app["dobY"]
         main_customer.dobM = main_app["dobM"]
         main_customer.dobD = main_app["dobD"]
         main_customer.ssn = main_app["ssn"]
-        main_customer.driver_license = main_app["dl"]
-        main_customer.no_of_dependents = main_app["nod"]
+        main_customer.driver_license = main_app["driver_license"]
+        main_customer.no_of_dependents = main_app["no_of_dependents"]
         main_customer.cell_phone = main_app["cell_phone"]
         main_customer.home_phone = main_app["home_phone"]
         main_customer.street = main_app["street"]
         main_customer.city = main_app["city"]
         main_customer.state = main_app["state"]
         main_customer.zip = main_app["zip"]
-        main_customer.years_there_first = main_app["yt1"]
+        main_customer.years_there_first = main_app["years_there_first"]
         main_customer.own_or_rent = main_app["own_or_rent"]
         main_customer.present_employer = main_app["present_employer"]
-        main_customer.years_there_second = main_app["yt2"]
+        main_customer.years_there_second = main_app["years_there_second"]
         main_customer.job_title = main_app["job_title"]
         main_customer.employer_phone = main_app["employer_phone"]
         main_customer.monthly_income = main_app["monthly_income"]
         main_customer.additional_income = main_app["additional_income"]
         main_customer.source = main_app["source"]
-        main_customer.landlord_mortgage_holder = main_app["landlord_holder"]
-        main_customer.monthly_rent_mortgage_payment = main_app["monthly_rent_payment"]
+        main_customer.landlord_mortgage_holder = main_app["landlord_mortgage_holder"]
+        main_customer.monthly_rent_mortgage_payment = main_app["monthly_rent_mortgage_payment"]
         main_customer.employement_status = main_app['employement_status']
         main_customer.first_name = main_app['first_name']
         main_customer.last_name = main_app['last_name']
@@ -3034,7 +3049,7 @@ def AppCredictDetails(request):
         company = Company.objects.get(id=user.dealer_company_id)
         print(company.contact_type, company.contact_code)
 
-        main_customer.cif_number = createContact(main_customer)
+        main_customer.cif_number = '1112'#createContact(main_customer)
         main_customer.save()
         credit_application = CreditApplication(credit_app=main_customer)
         credit_application.salesperson_email = request.user.email
@@ -3048,41 +3063,41 @@ def AppCredictDetails(request):
                 dobM=co_app["dobM"],
                 dobD=co_app["dobD"],
                 ssn=co_app["ssn"],
-                driver_license=co_app["dl"],
-                no_of_dependents=co_app["nod"],
+                driver_license=co_app["driver_license"],
+                no_of_dependents=co_app["no_of_dependents"],
                 cell_phone=co_app["cell_phone"],
                 home_phone=co_app["home_phone"],
                 street=co_app["street"],
                 city=co_app["city"],
                 state=co_app["state"],
                 zip=co_app["zip"],
-                years_there_first=co_app["yt1"],
+                years_there_first=co_app["years_there_first"],
                 own_or_rent=co_app["own_or_rent"],
                 present_employer=co_app["present_employer"],
-                years_there_second=co_app["yt2"],
+                years_there_second=co_app["years_there_second"],
                 job_title=co_app["job_title"],
                 employer_phone=co_app["employer_phone"],
                 monthly_income=co_app["monthly_income"],
                 additional_income=co_app["additional_income"],
                 source=co_app["source"],
-                landlord_mortgage_holder=co_app["landlord_holder"],
-                monthly_rent_mortgage_payment=co_app["monthly_rent_payment"],
+                landlord_mortgage_holder=co_app["landlord_mortgage_holder"],
+                monthly_rent_mortgage_payment=co_app["monthly_rent_mortgage_payment"],
                 employement_status=co_app['employement_status'],
                 first_name=co_app['first_name'],
                 last_name=co_app['last_name']
             )
             co_customer.save()
-            co_customer.cif_number = createContact(co_customer)
+            co_customer.cif_number = '11111'#createContact(co_customer)
             co_customer.save()
 
-            credit_application.co_applicant = co_customer
+            credit_application.credit_co_app = co_customer
             credit_application.co_enabled = True
 
         credit_application.status = "completed"
         credit_application.created_at = datetime.date.today()
         credit_application.save()
-        send_invite_email(main_customer.email, existing_id, company.name)
-        send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
+        #send_invite_email(main_customer.email, existing_id, company.name)
+        #send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
 
         return Response({
             'ok': True
