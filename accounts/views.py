@@ -105,6 +105,8 @@ def LoginView(request):
 
     if email is None or password is None or remember_device_check is None:
         return Response({
+            'status': 'error',
+            'message':'Please provide both email and password',
             'ok': False,
             'error': 'Please provide both email and password'
         }, status=HTTP_400_BAD_REQUEST)
@@ -113,12 +115,16 @@ def LoginView(request):
 
     if not user:
         return Response({
+            'status': 'error',
+            'message': 'Please check your credentials',
             'ok': False,
             'error': 'Please check your credentials'
         }, status=HTTP_400_BAD_REQUEST)
 
     if not user.account_status:
         return Response({
+            'status': 'error',
+            'message': 'User Account Not Available or Deleted',
             'ok': False,
             'error': 'User Account Not Available or Deleted'
         }, status=HTTP_400_BAD_REQUEST)
@@ -152,6 +158,8 @@ def LoginView(request):
         print(sms.response)
 
         return Response({
+            'status': 'success',
+            'message': '',
             'ok': True,
             'data': {
                 'authy_id': user.authy_id,
@@ -223,31 +231,41 @@ def ResetView(request):
 
     if email is None:
         return Response({
+            'status': 'error',
+            'message': 'Email id required',
             'ok': False,
-            'error': 'Email is required'
+            'error': 'Email id required'
         }, status=HTTP_400_BAD_REQUEST)
 
     if phone is None:
         return Response({
+            'status': 'error',
+            'message': 'Phone Number Required',
             'ok': False,
-            'error': 'Phone Number is required'
+            'error': 'Phone Number Required'
         }, status=HTTP_400_BAD_REQUEST)
 
     user = User.objects.filter(email=email).first()
     if not user.account_status:
         return Response({
+            'status': 'error',
+            'message': 'User Account Not Available or Deleted',
             'ok': False,
             'error': 'User Account Not Available or Deleted'
         }, status=HTTP_400_BAD_REQUEST)
 
     if user is None:
         return Response({
+            'status': 'error',
+            'message': 'User {} does not exist'.format(email),
             'ok': False,
             'error': 'User {} does not exist'.format(email)
         }, status=HTTP_404_NOT_FOUND)
 
     if user.phone != phone:
         return Response({
+            'status': 'error',
+            'message': 'Incorrect Phone Number'.format(phone),
             'ok': False,
             'error': 'Incorrect Phone Number'.format(phone)
         }, status=HTTP_404_NOT_FOUND)
@@ -256,6 +274,8 @@ def ResetView(request):
             'force': True
         })
         return Response({
+            'status': 'success',
+            'message': '',
             'ok': True,
             'data': {
                 'authy_id': user.authy_id
@@ -334,11 +354,15 @@ def CodeVerifyView(request):
     code = request.data.get('code')
     if authy_id is None or code is None:
         return Response({
+            'status': 'error',
+            'message': 'Invalid Request',
             'ok': False,
             'error': 'Invalid Request'
         }, HTTP_400_BAD_REQUEST)
     if code.isnumeric()== False:
         return Response({
+            'status': 'error',
+            'message': 'Invalid Code',
             'ok': False,
             'error': 'Invalid Code.'
         }, HTTP_400_BAD_REQUEST)
@@ -347,8 +371,10 @@ def CodeVerifyView(request):
         verification = authy_api.tokens.verify(authy_id, token=code)
         if not verification.ok():
             return Response({
+                'status': 'error',
+                'message': 'Incorrect Verification Code',
                 'ok': False,
-                'error': 'Verification Code is not correct'
+                'error': 'Incorrect Verification Code'
             }, HTTP_400_BAD_REQUEST)
 
     user = User.objects.get(authy_id=authy_id)
@@ -367,6 +393,8 @@ def CodeVerifyView(request):
         role.append('admin')
 
     return Response({
+        'status': 'success',
+        'message': '',
         'ok': True,
         'token': token.key,
         'avatar': user.avatar,
@@ -380,6 +408,8 @@ def CodeVerifyForgotView(request):
     code = request.data.get('code')
     if authy_id is None or code is None:
         return Response({
+            'status': 'error',
+            'message': 'Invalid Request',
             'ok': False,
             'error': 'Invalid Request'
         }, HTTP_400_BAD_REQUEST)
@@ -387,8 +417,10 @@ def CodeVerifyForgotView(request):
     verification = authy_api.tokens.verify(authy_id, token=code)
     if not verification.ok():
         return Response({
+            'status': 'error',
+            'message': 'Verification Code is not correct',
             'ok': False,
-            'error': 'Verification Code is not correct'
+            'error': 'Verification Code is not correct.'
         }, HTTP_400_BAD_REQUEST)
 
     forgot_token = secrets.token_hex(32)
@@ -397,6 +429,8 @@ def CodeVerifyForgotView(request):
     user.save()
 
     return Response({
+        'status': 'success',
+        'message': 'forgot_token generated.',
         'ok': True,
         'forgot_token': forgot_token
     })
@@ -480,7 +514,7 @@ def UserDeleteView(request, pk):
         return Response("Invalid User Id", HTTP_400_BAD_REQUEST)
     user.account_status = False
     user.save()
-    return Response({'User Deleted Successfully': True})
+    return Response({'status': 'success','message': 'User Deleted Successfully','User Deleted Successfully': True})
 
 
 @api_view(['POST'])
@@ -561,9 +595,9 @@ def UserInviteView(request):
     user_role = request.data.get('role')
     first_name = request.data.get('first_name')
     last_name = request.data.get('last_name')
-    response = {"status": False, "message": "Invalid Email"}
+    response = {"status": 'error', "message": "Invalid Email"}
     if email is None or user_role is None:
-        return Response({'status': False, 'message': 'email and staff type is mandatory'}, HTTP_400_BAD_REQUEST)
+        return Response({'status': 'error', 'message': 'email and staff fields are mandatory'}, HTTP_400_BAD_REQUEST)
     elif email.isnumeric() or '@' not in email or '.' not in email:
         return Response(response, HTTP_400_BAD_REQUEST)
 
@@ -573,18 +607,18 @@ def UserInviteView(request):
         if qev_response.code == 200:
             qev_json = qev_response.body
             if qev_json.get('result', '') == 'valid' and qev_json.get('disposable', '') == 'false':
-                response['status'] = True
+                response['status'] = 'success'
     except Exception as e:
         pass
     user = User.objects.filter(email=email).first()
     if user is not None:
         return Response({
-            'status': False,
+            'status': 'error',
             'message': 'User {} is already registered'.format(email)
         }, HTTP_400_BAD_REQUEST)
 
-    if not response['status']:
-        return Response(response, HTTP_400_BAD_REQUEST)
+    if response['status']=='error':
+        return Response({}, HTTP_400_BAD_REQUEST)
     else:
         try:
             invite = Invites.objects.get(email=email, token_status=True)
@@ -609,7 +643,7 @@ def UserInviteView(request):
             invited_user.save()
             # Send Email Invite
             send_invite_email(email, invite_token, request.user.dealer_company.name, user_role)
-            response['message'] = "ok"
+            response['message'] = "invite sent."
             return Response(response)
         else:
             invite_token = secrets.token_hex(32)
@@ -624,7 +658,7 @@ def UserInviteView(request):
             invited_user.save()
             # Send Email Invite
             send_invite_email(email, invite_token, request.user.dealer_company.name, user_role)
-            response['message'] = "ok"
+            response['message'] = "invite sent."
             return Response(response)
 
 
@@ -675,6 +709,8 @@ def UserInviteRegisterView(request):
     #last_name = request.data.get('last_name')
     if email is None or password is None or phone is None or invite_token is None or role is None :
         return Response({
+            'status': 'error',
+            'message': 'Invalid Request',
             'ok': False,
             'error': 'Invalid Request'
         }, HTTP_400_BAD_REQUEST)
@@ -682,6 +718,8 @@ def UserInviteRegisterView(request):
     user = User.objects.filter(email=email).first()
     if user is not None:
         return Response({
+            'status': 'error',
+            'message': 'User {} is already exist'.format(email),
             'ok': False,
             'error': 'User {} is already exist'.format(email)
         }, HTTP_400_BAD_REQUEST)
@@ -689,6 +727,8 @@ def UserInviteRegisterView(request):
 
     if user is not None:
         return Response({
+            'status': 'error',
+            'message': '{} has been registered already'.format(phone),
             'ok': False,
             'error': '{} has been registered already'.format(phone)
         }, HTTP_400_BAD_REQUEST)
@@ -705,7 +745,7 @@ def UserInviteRegisterView(request):
     if invite is not None:
         authy_user = authy_api.users.create(email=email, country_code=1, phone=phone)
         if not authy_user.ok():
-            return Response({'ok': False, 'error': 'Please check your mobile number'}, HTTP_400_BAD_REQUEST)
+            return Response({'status': 'error','message': 'Please check your mobile number','ok': False, 'error': 'Please check your mobile number'}, HTTP_400_BAD_REQUEST)
         user = User.objects.create_user(email, authy_user.id, password, phone=phone, )
         user.last_name = invite.last_name
         user.first_name = invite.first_name
@@ -717,9 +757,9 @@ def UserInviteRegisterView(request):
         sms = authy_api.users.request_sms(authy_user.id, {'force': True})
         invite.token_status = False
         invite.save()
-        return Response({'ok': True, 'data': {'authy_id': authy_user.id, 'ending': phone[-4:]}})
+        return Response({'status': 'success','message': '','ok': True, 'data': {'authy_id': authy_user.id, 'ending': phone[-4:]}})
     else:
-        return Response({'ok': False, 'error': 'Invite Token Expired or Invalid Invite Token '}, HTTP_400_BAD_REQUEST)
+        return Response({'status': 'error','message': 'Invite Token Expired or Invalid Invite Token.','ok': False, 'error': 'Invite Token Expired or Invalid Invite Token '}, HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -738,29 +778,39 @@ def AddDealer(request):
 
         if dealer_email is None or dealer_phone is None:
             return Response({
+                'status':'error',
+                'message': 'Invalid Request',
                 'ok': False,
                 'error': 'Invalid Request'
             }, HTTP_400_BAD_REQUEST)
         elif dealer_email.isnumeric() or '@' not in dealer_email or '.' not in dealer_email:
             return Response({
+                'status': 'error',
+                'message': 'Invalid Email id',
                 'ok': False,
                 'error': 'Invalid Email id'
             }, HTTP_400_BAD_REQUEST)
         old_user = User.objects.filter(email=dealer_email).first()
         if old_user is not None:
             return Response({
+                'status': 'error',
+                'message': 'User {} already exists'.format(dealer_email),
                 'ok': False,
-                'error': 'User {} is already exist'.format(dealer_email)
+                'error': 'User {} already exists'.format(dealer_email)
             }, HTTP_400_BAD_REQUEST)
         old_user = User.objects.filter(phone=dealer_phone).first()
         if old_user is not None:
             return Response({
+                'status': 'error',
+                'message': 'User phone number {} already exists'.format(dealer_phone),
                 'ok': False,
-                'error': 'User {} is already exist'.format(dealer_phone)
+                'error': 'User phone number {} already exists'.format(dealer_phone)
             }, HTTP_400_BAD_REQUEST)
         authy_user = authy_api.users.create(email=dealer_email, country_code=1, phone=dealer_phone)
         if not authy_user.ok():
             return Response({
+                'status': 'error',
+                'message': 'Error while creating user',
                 'ok': False,
                 'error': 'Error while creating user'
             }, HTTP_400_BAD_REQUEST)
@@ -803,10 +853,11 @@ def AddDealer(request):
         # Send Email Invite
         send_invite_email(dealer_email, invite_token, dealer_company_name, 'dealer')
         response['message'] = "Invite email has been sent"
+        response['status'] = 'success'
         return Response(response)
 
     else:
-        return Response({'ok':False})
+        return Response({'status': 'error','ok':False, 'message':'User auth error'})
 
 @api_view(['POST'])
 def RegisterDealerVerify(request):
@@ -818,6 +869,8 @@ def RegisterDealerVerify(request):
     invite_token = request.data.get('invite_token')
     if email is None or password is None or phone is None:
         return Response({
+            'status': 'error',
+            'message': 'Invalid Request',
             'ok': False,
             'error': 'Invalid Request'
         }, HTTP_400_BAD_REQUEST)
@@ -834,6 +887,8 @@ def RegisterDealerVerify(request):
         sms = authy_api.users.request_sms(user.authy_id, {'force': True})
         print(sms)
         return Response({
+            'status': 'success',
+            'message': 'Code has been sent.',
             'ok': True,
             'data': {
                 'authy_id': user.authy_id,
@@ -842,7 +897,7 @@ def RegisterDealerVerify(request):
         })
 
     else:
-        return Response({'ok': False})
+        return Response({'status': 'error','message': 'Invite error.','ok': False})
 
 
 @api_view(['GET'])
@@ -885,9 +940,9 @@ def DealerList(request):
                     sorted_dealer_data.append(dl)
                     dealers_data_response.remove(dl)
 
-        return Response({'ok':True,'data':sorted_dealer_data})
+        return Response({'status': 'success','message': '','ok':True,'data':sorted_dealer_data})
     else:
-        return Response({'ok':False,'data':''})
+        return Response({'status': 'error','message': 'Auth error','ok':False,'data':''})
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -906,20 +961,20 @@ def UpdateDealer(request):
         #first_name = request.data.get('first_name')
         #last_name = request.data.get('last_name')
         if email is None or phone is None:
-            return Response({'ok': False, 'message': 'email and phone type is mandatory'}, HTTP_400_BAD_REQUEST)
+            return Response({'status': 'error','ok': False, 'message': 'email and phone number fields are mandatory'}, HTTP_400_BAD_REQUEST)
         elif email.isnumeric() or '@' not in email or '.' not in email:
-            return Response({'ok': False, 'message': 'email is not correct.'}, HTTP_400_BAD_REQUEST)
+            return Response({'status': 'error','ok': False, 'message': 'email id incorrect.'}, HTTP_400_BAD_REQUEST)
         user = User.objects.filter(email=email).exclude(id = db_id).first()
         if user is not None:
             return Response({
-                'status': False,
-                'message': 'User {} is already in use'.format(email)
+                'status': 'error',
+                'message': 'User’s email id {} is already in use'.format(email)
             }, HTTP_400_BAD_REQUEST)
         user = User.objects.filter(phone=phone).exclude(id=db_id).first()
         if user is not None:
             return Response({
-                'status': False,
-                'message': 'User {} is already in use'.format(phone)
+                'status': 'error',
+                'message': 'User’s phone number {} is already in use'.format(phone)
             }, HTTP_400_BAD_REQUEST)
 
         dealer_user = User.objects.get(id = db_id)
@@ -944,7 +999,7 @@ def UpdateDealer(request):
             #         elif r == 'dealer':
             #             dealer_user.dealer = True
             #     dealer_user.save()
-        return Response({'ok': True, 'message': 'User Updated Successfully.'})
+        return Response({'status':'success','ok': True, 'message': 'User Updated Successfully.'})
 
     elif req_user.is_dealer:
         db_id = request.data.get('id')
@@ -953,13 +1008,13 @@ def UpdateDealer(request):
         email = request.data.get('email')
         roles = request.data.get('role')
         if email is None or roles is None:
-            return Response({'ok': False, 'message': 'email and staff type is mandatory'}, HTTP_400_BAD_REQUEST)
+            return Response({'status':'error','ok': False, 'message': 'email and staff type is mandatory'}, HTTP_400_BAD_REQUEST)
         elif email.isnumeric() or '@' not in email or '.' not in email:
-            return Response({'ok': False, 'message': 'email is not correct.'}, HTTP_400_BAD_REQUEST)
+            return Response({'status':'error','ok': False, 'message': 'email is not correct.'}, HTTP_400_BAD_REQUEST)
         user = User.objects.filter(email=email).exclude(id = db_id).first()
         if user is not None:
             return Response({
-                'status': False,
+                'status': 'error',
                 'message': 'User {} is already in use'.format(email)
             }, HTTP_400_BAD_REQUEST)
         user = User.objects.get(id = db_id)
@@ -987,14 +1042,14 @@ def UpdateUser(request):
     email = request.data.get('email')
     roles = request.data.get('role')
     if email is None or roles is None:
-        return Response({'ok': False, 'message': 'email and staff type is mandatory'}, HTTP_400_BAD_REQUEST)
+        return Response({'status':'error','ok': False, 'message': 'email and staff fields are mandatory'}, HTTP_400_BAD_REQUEST)
     elif email.isnumeric() or '@' not in email or '.' not in email:
-        return Response({'ok': False, 'message': 'email is not correct.'}, HTTP_400_BAD_REQUEST)
+        return Response({'status':'error','ok': False, 'message': 'Incorrect email id'}, HTTP_400_BAD_REQUEST)
     user = User.objects.filter(email=email).exclude(id=db_id).first()
     if user is not None:
         return Response({
-            'status': False,
-            'message': 'User {} is already in use'.format(email)
+            'status': 'errors',
+            'message': 'User {} is already registered'.format(email)
         }, HTTP_400_BAD_REQUEST)
     user = User.objects.get(id=db_id)
     user.first_name = first_name
@@ -1009,7 +1064,7 @@ def UpdateUser(request):
             user.dealer = True
             user.sales = False
     user.save()
-    return Response({'ok': True, 'message': 'User Updated Successfully.'})
+    return Response({'status':'success','ok': True, 'message': 'User Updated Successfully.'})
 
 
 
