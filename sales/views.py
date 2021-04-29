@@ -2967,7 +2967,7 @@ def AppCredictDetails(request):
         company = Company.objects.get(id=user.dealer_company_id)
         print(company.contact_type,company.contact_code)
 
-        main_customer.cif_number = createContact(main_customer)
+        main_customer.cif_number = '158'+str(main_customer.id)#createContact(main_customer)
         main_customer.save()
         credit_application = None
         try:
@@ -3018,7 +3018,7 @@ def AppCredictDetails(request):
             co_customer.last_name = co_app['last_name']
             co_customer.save()
 
-            co_customer.cif_number = createContact(co_customer)
+            co_customer.cif_number = '158'+str(co_customer.id)#createContact(co_customer)
             co_customer.save()
 
             credit_application.credit_co_app = co_customer
@@ -3074,7 +3074,7 @@ def AppCredictDetails(request):
         company = Company.objects.get(id=user.dealer_company_id)
         print(company.contact_type, company.contact_code)
 
-        main_customer.cif_number = createContact(main_customer)
+        main_customer.cif_number = '158'+str(main_customer.id)#createContact(main_customer)
         main_customer.save()
         credit_application = CreditApplication(credit_app=main_customer)
         credit_application.salesperson_email = request.user.email
@@ -3112,7 +3112,7 @@ def AppCredictDetails(request):
                 last_name=co_app['last_name']
             )
             co_customer.save()
-            co_customer.cif_number = createContact(co_customer)
+            co_customer.cif_number = '158'+str(co_customer.id)#createContact(co_customer)
             co_customer.save()
 
             credit_application.credit_co_app = co_customer
