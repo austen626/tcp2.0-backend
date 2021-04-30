@@ -29,6 +29,7 @@ from .hellosignapi import get_all_signature_status
 from .hellosignapi import sendEmailOkay, delete_signature_request
 from django.forms.models import model_to_dict
 from django.core.mail import EmailMultiAlternatives
+import hashlib
 
 
 # Public Holidays Check
@@ -69,14 +70,16 @@ def send_invite_email(email, invite_id, dealer_company):
         msg.attach_alternative(html_message, 'text/html')
     msg.send()
     return True
-def send_link_email(email, doc_id, phone, dealer_company):
+def send_link_email(email, doc_id, phone, dealer_company, digest, sales_email):
     if email is None:
         return False
+    token = hashlib.sha512(digest.encode())
+    token = token.hexdigest()
     emails = [email]
     subject = "TCP Credit application"
     message = "Dear User,\n\n"
     message += "Credit application is on"+ dealer_company+"\n\n  Please fill details in the link-"
-    message += settings.INVITE_CREDIT_APP_URL + str(doc_id) + "&phone=" + phone + "&email=" + email
+    message += settings.INVITE_CREDIT_APP_URL + str(doc_id) + "&phone=" + phone + "&email=" + email+ "&sales_email=" + sales_email+ "&token=" + token
     message += "\n\nThanks!\nTravis Capital Partners"
 
     from_email = settings.DEFAULT_EMAIL_FROM
@@ -1069,47 +1072,66 @@ def SearchCustomer(request):
             result['co_app'] = model_to_dict(co_customer, fields=[field.name for field in co_customer._meta.fields])
         else:
             result['co_enabled'] = False
+            result['co_app'] = {}
         return Response({'status':'success','message':'','ok':True,'data':result})
     result = []
     try:
         r = searchContactsByPhoneEmail(data['phone'], data['email'])  # searchContacts(data["name"], data["city"])
         final = r['payload']['data']
         for data in final:
-            print(data, '..................')
             result.append(data)
+        if len(result) == 0:
+            return Response({'status': 'error', 'message': 'No Data found', 'ok': True, 'data': [], 'msg': 'No Data found'})
     except Exception as e:
         print(e, "No Data found")
         return Response({'status':'error','message':'No Data found','ok':True,'data':[], 'msg':'No Data found'})
-    for r in result:
-        cif_no = r['cif_no']
-        try:
-            nor_customer = getContact(cif_no)
-            print(nor_customer)
-            result = {
-                "cifno": nor_customer['Cifno'],
-                "nortridge_cif_number": nor_customer['Cifnumber'],  # TCP customer number
-                "name": nor_customer['Firstname1'],
-                "lastname": nor_customer['Lastname1'],
-                "email": nor_customer['Email'],
-                "street": nor_customer['Street_Address1'],
-                "city": nor_customer['City'],
-                "state": nor_customer['State'],
-                "county": nor_customer['County'],
-                "zip": nor_customer['Zip'],
-                "cell_phone": nor_customer['Cif_Phone_Nums'][0]['Phone_Raw'],
-                "dob": nor_customer['Dob'],
-                "tin": nor_customer['Tin'],
-                "fulldata": nor_customer
-            }
+    r = result[-1]
 
-            if len(customer['Cif_Phone_Nums']) > 1:
-                result["home_phone"] = nor_customer['Cif_Phone_Nums'][1]['Phone_Raw']
-            else:
-                print("Nothing")
-            return Response(result)
-        except Exception as e:
-            print(e)
-            return Response({'status':'success','message':'Çustomer Not Found'}, HTTP_400_BAD_REQUEST)
+    cif_no = r['Cifno']
+    import traceback
+    try:
+        nor_customer = getContact(cif_no)
+        print(nor_customer)
+
+        main_app = {}
+        main_app['name'] = nor_customer['Firstname1']
+        main_app['first_name'] = nor_customer['Firstname1'] +' '+nor_customer['Lastname1']
+        main_app['last_name'] = nor_customer['Lastname1']
+        main_app['email'] = nor_customer['Email']
+        main_app['dobY'] = ''
+        main_app['dobM'] = ''
+        main_app['dobD'] = ''
+        main_app['ssn'] = None
+        main_app['driver_license'] = None
+        main_app['no_of_dependents'] = None
+        main_app['cell_phone'] = nor_customer['Cif_Phone_Nums'][0]['Phone_Raw']
+        main_app['home_phone'] = None
+        main_app['street'] = nor_customer['Street_Address1']
+        main_app['city'] = nor_customer['City']
+        main_app['state'] = nor_customer['State']
+        main_app['zip'] = nor_customer['Zip']
+        main_app['years_there_first'] = None
+        main_app['own_or_rent'] = None
+        main_app['employement_status'] = None
+        main_app['present_employer'] = None
+        main_app['years_there_second'] = None
+        main_app['job_title'] = None
+        main_app['employer_phone'] = None
+        main_app['monthly_income'] = None
+        main_app['additional_income'] = None
+        main_app['source'] = None
+        main_app['landlord_mortgage_holder'] = None
+        main_app['monthly_rent_mortgage_payment'] = None
+        main_app['cif_number'] = nor_customer['Cifno']
+        main_app['nortridge_cif_number'] = nor_customer['Cifnumber']
+
+        data = {'main_app':main_app,'co_app':{}, 'co_enabled':False}
+
+        return Response({'status':'success','message':'','ok':True,'data':data})
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        return Response({'status':'error','message':'Çustomer Not Found'}, HTTP_400_BAD_REQUEST)
 
 
 
@@ -2885,7 +2907,7 @@ def AppCredict(request):
         customer.state = state
         customer.zip = zip_code
         customer.save()
-        result = send_link_email(customer_email, customer.id , customer_phone, company.name)
+        result = send_link_email(customer_email, customer.id , customer_phone, company.name,customer_email+str(customer.id), user.email)
         return Response({
             'status': 'success',
             'ok': result,
@@ -2942,7 +2964,7 @@ def AppCredictDetails(request):
         main_customer.driver_license = main_app["driver_license"]
         main_customer.no_of_dependents = main_app["no_of_dependents"]
         main_customer.cell_phone = main_app["cell_phone"]
-        main_customer.home_phone = main_app["home_phone"]
+        #main_customer.home_phone = main_app["home_phone"]
         main_customer.street = main_app["street"]
         main_customer.city = main_app["city"]
         main_customer.state = main_app["state"]
@@ -2997,7 +3019,7 @@ def AppCredictDetails(request):
             co_customer.driver_license = co_app["driver_license"]
             co_customer.no_of_dependents = co_app["no_of_dependents"]
             co_customer.cell_phone = co_app["cell_phone"]
-            co_customer.home_phone = co_app["home_phone"]
+            #co_customer.home_phone = co_app["home_phone"]
             co_customer.street = co_app["street"]
             co_customer.city = co_app["city"]
             co_customer.state = co_app["state"]
@@ -3049,7 +3071,7 @@ def AppCredictDetails(request):
         main_customer.driver_license = main_app["driver_license"]
         main_customer.no_of_dependents = main_app["no_of_dependents"]
         main_customer.cell_phone = main_app["cell_phone"]
-        main_customer.home_phone = main_app["home_phone"]
+        #main_customer.home_phone = main_app["home_phone"]
         main_customer.street = main_app["street"]
         main_customer.city = main_app["city"]
         main_customer.state = main_app["state"]
@@ -3091,7 +3113,6 @@ def AppCredictDetails(request):
                 driver_license=co_app["driver_license"],
                 no_of_dependents=co_app["no_of_dependents"],
                 cell_phone=co_app["cell_phone"],
-                home_phone=co_app["home_phone"],
                 street=co_app["street"],
                 city=co_app["city"],
                 state=co_app["state"],
@@ -3129,6 +3150,144 @@ def AppCredictDetails(request):
             'message': 'Application Submitted Successfully. ',
             'ok': True
         })
+    else:
+        return Response({
+            'status': 'error',
+            'message': 'Customer Not Found. ',
+            'ok':False
+        })
+
+
+@api_view(['POST'])
+def AppCredictDetailsonLink(request):
+    data = request.data
+    contact = data["contact"]
+    main_app = contact["main_app"]
+    co_app = contact["co_app"]
+    co_enabled = contact["co_enabled"]
+    co_complete = contact["co_complete"]
+    co_separate = contact["co_separate"]
+    existing_id = contact["id"]
+    salesperson_email = contact['salesperson_email']
+    token = contact['token']
+    if existing_id is not None and existing_id !=0:
+
+        main_customer = Customer.objects.get(id = existing_id)
+        digest = main_customer.email+str(existing_id)
+        digest_token = hashlib.sha512(digest.encode())
+        digest_token = digest_token.hexdigest()
+        print(digest_token, '==', token)
+        if digest_token != token:
+            return Response({
+                'status': 'error',
+                'message': 'Authentication failure',
+                'ok': False
+            })
+        main_customer.name = main_app["name"]
+        main_customer.email = main_app["email"]
+        main_customer.dobY = main_app["dobY"]
+        main_customer.dobM = main_app["dobM"]
+        main_customer.dobD = main_app["dobD"]
+        main_customer.ssn = main_app["ssn"]
+        main_customer.driver_license = main_app["driver_license"]
+        main_customer.no_of_dependents = main_app["no_of_dependents"]
+        main_customer.cell_phone = main_app["cell_phone"]
+        #main_customer.home_phone = main_app["home_phone"]
+        main_customer.street = main_app["street"]
+        main_customer.city = main_app["city"]
+        main_customer.state = main_app["state"]
+        main_customer.zip = main_app["zip"]
+        main_customer.years_there_first = main_app["years_there_first"]
+        main_customer.own_or_rent = main_app["own_or_rent"]
+        main_customer.present_employer = main_app["present_employer"]
+        main_customer.years_there_second = main_app["years_there_second"]
+        main_customer.job_title = main_app["job_title"]
+        main_customer.employer_phone = main_app["employer_phone"]
+        main_customer.monthly_income = main_app["monthly_income"]
+        main_customer.additional_income = main_app["additional_income"]
+        main_customer.source = main_app["source"]
+        main_customer.landlord_mortgage_holder = main_app["landlord_mortgage_holder"]
+        main_customer.monthly_rent_mortgage_payment = main_app["monthly_rent_mortgage_payment"]
+        main_customer.employement_status = main_app['employement_status']
+        main_customer.first_name = main_app['first_name']
+        main_customer.last_name = main_app['last_name']
+        main_customer.save()
+        #dealer company info
+        user = User.objects.get(email=salesperson_email)
+        company = Company.objects.get(id=user.dealer_company_id)
+        print(company.contact_type,company.contact_code)
+
+        main_customer.cif_number = '158'+str(main_customer.id)#createContact(main_customer)
+        main_customer.save()
+        credit_application = None
+        try:
+            credit_application = CreditApplication.objects.get(credit_app_id = main_customer.id)#(credit_app = main_customer)
+            credit_application.salesperson_email = request.user.email
+            #credit_application.save()
+        except:
+            credit_application = CreditApplication(credit_app=main_customer)
+            credit_application.salesperson_email = salesperson_email
+
+
+
+        co_enabled = contact["co_enabled"]
+        if co_enabled == True:
+            co_customer = None
+            try:
+                co_customer = Customer.objects.get(id=credit_application.credit_co_app_id)
+            except:
+                co_customer = Customer(email = co_app["email"], cell_phone = co_app['cell_phone'])
+                co_customer.save()
+            co_customer.name = co_app["name"]
+            co_customer.email = co_app["email"]
+            co_customer.dobY = co_app["dobY"]
+            co_customer.dobM = co_app["dobM"]
+            co_customer.dobD = co_app["dobD"]
+            co_customer.ssn = co_app["ssn"]
+            co_customer.driver_license = co_app["driver_license"]
+            co_customer.no_of_dependents = co_app["no_of_dependents"]
+            co_customer.cell_phone = co_app["cell_phone"]
+            #co_customer.home_phone = co_app["home_phone"]
+            co_customer.street = co_app["street"]
+            co_customer.city = co_app["city"]
+            co_customer.state = co_app["state"]
+            co_customer.zip = co_app["zip"]
+            co_customer.years_there_first = co_app["years_there_first"]
+            co_customer.own_or_rent = co_app["own_or_rent"]
+            co_customer.present_employer = co_app["present_employer"]
+            co_customer.years_there_second = co_app["years_there_second"]
+            co_customer.job_title = co_app["job_title"]
+            co_customer.employer_phone = co_app["employer_phone"]
+            co_customer.monthly_income = co_app["monthly_income"]
+            co_customer.additional_income = co_app["additional_income"]
+            co_customer.source = co_app["source"]
+            co_customer.landlord_mortgage_holder = co_app["landlord_mortgage_holder"]
+            co_customer.monthly_rent_mortgage_payment = co_app["monthly_rent_mortgage_payment"]
+            co_customer.employement_status = co_app['employement_status']
+            co_customer.first_name = co_app['first_name']
+            co_customer.last_name = co_app['last_name']
+            co_customer.save()
+
+            co_customer.cif_number = '158'+str(co_customer.id)#createContact(co_customer)
+            co_customer.save()
+
+            credit_application.credit_co_app = co_customer
+            credit_application.co_enabled = True
+
+        credit_application.status = "completed"
+        credit_application.created_at = datetime.date.today()
+        credit_application.save()
+        send_invite_email(main_customer.email, existing_id, company.name)
+        send_invite_email(settings.EMAIL_HOST_USER, existing_id, company.name)
+
+
+
+        return Response({
+            'status': 'success',
+            'message': 'Application Updated Successfully ',
+            'ok': True
+        })
+
     else:
         return Response({
             'status': 'error',

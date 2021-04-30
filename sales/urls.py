@@ -11,6 +11,7 @@ urlpatterns = [
     path('search-customer', SearchCustomer),
     path('creditapp', AppCredict),
     path('creditapp-details', AppCredictDetails),
+    path('creditapp-details-onlink', AppCredictDetailsonLink),
 
     path('search-customer-local', SearchCustomerViewLocal),
     path('search-customer-nortridge', SearchCustomerViewNortridge),
