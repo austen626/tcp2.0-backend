@@ -79,7 +79,7 @@ def send_link_email(email, doc_id, phone, dealer_company, digest, sales_email):
     subject = "TCP Credit application"
     message = "Dear User,\n\n"
     message += "Credit application is on"+ dealer_company+"\n\n  Please fill details in the link-"
-    message += settings.INVITE_CREDIT_APP_URL + str(doc_id) + "&phone=" + phone + "&email=" + email+ "&sales_email=" + sales_email+ "&token=" + token
+    message += settings.INVITE_CREDIT_APP_URL + str(doc_id) + "&phone=" + phone + "&email=" + email+ "&salesperson_email=" + sales_email+ "&token=" + token
     message += "\n\nThanks!\nTravis Capital Partners"
 
     from_email = settings.DEFAULT_EMAIL_FROM
