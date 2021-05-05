@@ -2945,6 +2945,9 @@ def AppCredict(request):
         customer.state = state
         customer.zip = zip_code
         customer.save()
+        credit_application = CreditApplication(credit_app=customer)
+        credit_application.status = 'link_sent'
+        credit_application.save()
         result = send_link_email(customer_email, customer.id , customer_phone, company.name,customer_email+str(customer.id), user.email)
         return Response({
             'status': 'success',
@@ -3260,9 +3263,10 @@ def AppCredictDetailsonLink(request):
         credit_application = None
         try:
             credit_application = CreditApplication.objects.get(credit_app_id = main_customer.id)#(credit_app = main_customer)
-            credit_application.salesperson_email = request.user.email
+            credit_application.salesperson_email = salesperson_email
             #credit_application.save()
-        except:
+        except Exception as e:
+            print(e)
             credit_application = CreditApplication(credit_app=main_customer)
             credit_application.salesperson_email = salesperson_email
 
