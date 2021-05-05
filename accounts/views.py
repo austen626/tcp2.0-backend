@@ -767,14 +767,14 @@ def AddDealer(request):
     user = request.user
     response = {}
     if user.is_admin:
-        dealer_email = request.data.get('dealer_email')
-        dealer_company_name = request.data.get('dealer_company_name')
-        dealer_contact_email = request.data.get('dealer_contact_email')
-        dealer_phone = request.data.get('dealer_phone')
-        dealer_address_street = request.data.get('dealer_address_street')
-        dealer_address_city = request.data.get('dealer_address_city')
-        dealer_address_state = request.data.get('dealer_address_state')
-        dealer_address_zipcode = request.data.get('dealer_address_zipcode')
+        dealer_email = request.data.get('email')
+        dealer_company_name = request.data.get('company_name')
+        dealer_contact_email = request.data.get('contact_email')
+        dealer_phone = request.data.get('phone')
+        dealer_address_street = request.data.get('street')
+        dealer_address_city = request.data.get('city')
+        dealer_address_state = request.data.get('state')
+        dealer_address_zipcode = request.data.get('zip')
 
         if dealer_email is None or dealer_phone is None:
             return Response({
