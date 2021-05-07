@@ -1063,13 +1063,16 @@ def SearchCustomer(request):
         #converting db row to dict
         all_field_data = model_to_dict(customer, fields=[field.name for field in customer._meta.fields])
         credit_application = None
+        customer_co_app_id = None
         try:
             credit_application = CreditApplication.objects.get(credit_app_id=customer.id)
+            customer_co_app_id = credit_application.credit_co_app_id
         except:
             pass
         result = {}
         result['main_app'] = all_field_data
-        if credit_application is not None:
+        if credit_application is not None and customer_co_app_id is not None:
+            print('credit_application.credit_co_app_id=',credit_application.credit_co_app_id)
             co_customer = Customer.objects.get(id=credit_application.credit_co_app_id)
             result['co_enabled'] = True
             result['co_app'] = model_to_dict(co_customer, fields=[field.name for field in co_customer._meta.fields])

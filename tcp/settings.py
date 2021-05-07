@@ -183,6 +183,6 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'developer@dcg.dev' #newaccounts@traviscapitalpartners.com'#'TCPnewDCG2020'#
 EMAIL_HOST_PASSWORD = 'gE7!Paym'#'Password#105'
 EMAIL_USE_SSL = False
-INVITE_TOKEN_URL = 'https://tcp2-dev-web-5scjsehyma-uk.a.run.app/register/?invite_token='#"https://dev-app.traviscapitalpartners.com/register/?invite_token="
-INVITE_TOKEN_URL_ADMIN = 'http://127.0.0.1:8000/register_dealer/?invite_token='
-INVITE_CREDIT_APP_URL = 'https://tcp2-dev-web-5scjsehyma-uk.a.run.app/welcome/?customerId='
+INVITE_TOKEN_URL = 'https://tcp2-dev-web-5scjsehyma-uk.a.run.app/register?invite_token='#"https://dev-app.traviscapitalpartners.com/register/?invite_token="
+INVITE_TOKEN_URL_ADMIN = 'http://127.0.0.1:8000/register_dealer?invite_token='
+INVITE_CREDIT_APP_URL = 'https://tcp2-dev-web-5scjsehyma-uk.a.run.app/welcome?customerId='
