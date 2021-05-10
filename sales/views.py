@@ -2963,10 +2963,6 @@ def AppCredict(request):
             customer.last_name = last_name
             customer.name = name
             customer.cell_phone = customer_phone
-            customer.street = street
-            customer.city = city
-            customer.state = state
-            customer.zip = zip_code
             customer.save()
             credit_application = CreditApplication.objects.get(credit_app=cid)
             credit_application.status = 'link_sent'
