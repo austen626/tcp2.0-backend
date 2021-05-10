@@ -2907,6 +2907,9 @@ def HellosignReminder(request, pk):
 def AppCredict(request):
     customer_email = request.data.get('customer_email')
     customer_phone = request.data.get('customer_phone')
+    customer_phone = customer_phone.replace(' ','')
+    customer_phone = customer_phone.replace('(', '')
+    customer_phone = customer_phone.replace(')', '-')
     first_name = request.data.get('first_name')
     last_name = request.data.get('last_name')
     name = request.data.get('name')
