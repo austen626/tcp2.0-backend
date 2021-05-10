@@ -2909,16 +2909,10 @@ def HellosignReminder(request, pk):
 def AppCredict(request):
     customer_email = request.data.get('customer_email')
     customer_phone = request.data.get('customer_phone')
-    # customer_phone = customer_phone.replace(' ','')
-    # customer_phone = customer_phone.replace('(', '')
-    # customer_phone = customer_phone.replace(')', '-')
     first_name = request.data.get('first_name')
     last_name = request.data.get('last_name')
     name = request.data.get('name')
-    street = request.data.get('street')
-    city = request.data.get('city')
-    state = request.data.get('state')
-    zip_code = request.data.get('zip_code')
+
     action = request.data.get('action')
     # dealer company info
     user = User.objects.get(email=request.user.email)
@@ -2952,10 +2946,6 @@ def AppCredict(request):
             customer.last_name = last_name
             customer.name = name
             customer.cell_phone = customer_phone
-            customer.street = street
-            customer.city = city
-            customer.state = state
-            customer.zip = zip_code
             customer.save()
             credit_application = CreditApplication(credit_app=customer)
             credit_application.salesperson_email = request.user.email
