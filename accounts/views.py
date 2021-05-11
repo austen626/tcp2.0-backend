@@ -756,6 +756,7 @@ def UserInviteRegisterView(request):
         user.dealer_company = invite.dealer_company
         if role == "dealer":
             user.dealer = True
+            user.sales = False
             user.save()
         user.save()
         sms = authy_api.users.request_sms(authy_user.id, {'force': True})
